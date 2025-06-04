@@ -71,3 +71,11 @@ export interface TimeSeriesViewerProps {
   timeSeries: Array<{ step: number; counts: Record<NodeState, number> }>;
   show: boolean;
 }
+
+// Session data structure
+export interface SessionData {
+  games: Record<number, {
+    timeSeries: Array<{ step: number; counts: Record<NodeState, number> }>;
+    completedAt: string;
+  }>;
+}
