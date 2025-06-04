@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { toPng } from 'html-to-image';
 import { GameState, GridNode, NodeState } from './types';
 import Grid from './Grid';
@@ -30,6 +30,23 @@ const initialGameState: GameState = {
   history: [],
 };
 
+const countNodeStates = (nodes: Record<string, GridNode>): Record<NodeState, number> => {
+  const counts: Record<NodeState, number> = {
+    Susceptible: 0,
+    VaccinatedSafe: 0,
+    VaccinatedFailed: 0,
+    Infected: 0,
+    Immune: 0,
+    InfectionAttemptFailed: 0,
+  };
+  
+  Object.values(nodes).forEach(node => {
+    counts[node.state]++;
+  });
+  
+  return counts;
+};
+
 export default function App() {
   const [state, setState] = useState<GameState>(initialGameState);
   const [selectedState, setSelectedState] = useState<NodeState | null>(null);
@@ -40,6 +57,27 @@ export default function App() {
   const [showTimeSeries, setShowTimeSeries] = useState<boolean>(false);
   const [timeSeries, setTimeSeries] = useState<Array<{ step: number; counts: Record<NodeState, number> }>>([]);
   const gridRef = useRef<HTMLDivElement>(null);
+
+  // Initialize time series when infection mode is enabled
+  useEffect(() => {
+    if (infectionMode) {
+      const currentCounts = countNodeStates(state.nodes);
+      setTimeSeries([{ step: 0, counts: currentCounts }]);
+    } else {
+      setTimeSeries([]);
+    }
+  }, [infectionMode]);
+
+  // Update time series when state changes during infection mode
+  useEffect(() => {
+    if (infectionMode && state.history.length > 0) {
+      const currentCounts = countNodeStates(state.nodes);
+      setTimeSeries(prev => [...prev, { 
+        step: prev.length, 
+        counts: currentCounts 
+      }]);
+    }
+  }, [state.history.length, infectionMode]);
 
   function resetGrid(rows: number, cols: number) {
     const freshNodes = createInitialNodes(rows, cols);
@@ -66,7 +104,9 @@ export default function App() {
       };
     });
     setPendingSource(null);
-    setTimeSeries(prev => prev.slice(0, -1));
+    if (infectionMode) {
+      setTimeSeries(prev => prev.slice(0, -1));
+    }
   }
 
   function downloadJSON() {
