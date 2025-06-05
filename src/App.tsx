@@ -7,6 +7,7 @@ import StatePalette from './StatePalette';
 import InfectionModeToggle from './InfectionModeToggle';
 import VaccinationEfficacyToggle from './VaccinationEfficacyToggle';
 import TimeSeriesChart from './TimeSeriesChart';
+import SessionDialog from './SessionDialog';
 
 const createInitialNodes = (rows: number, cols: number) => {
   const nodes: Record<string, GridNode> = {};
@@ -68,23 +69,8 @@ export default function App() {
   const [sessionName, setSessionName] = useState<string>('');
   const [sessionDate, setSessionDate] = useState<string>('');
   const [gameNumber, setGameNumber] = useState<number>(1);
+  const [showSessionDialog, setShowSessionDialog] = useState<boolean>(true);
   const gridRef = useRef<HTMLDivElement>(null);
-  const initialized = useRef<boolean>(false);
-
-  // Initialize session only once
-  useEffect(() => {
-    if (!initialized.current) {
-      initialized.current = true;
-      const name = window.prompt('Enter Session Name (e.g. "Spring 2025 Workshop"):');
-      if (name) {
-        setSessionName(name);
-        const today = formatDate(new Date());
-        setSessionDate(today);
-        setGameNumber(1);
-        setTimeSeries([]);
-      }
-    }
-  }, []);
 
   // Initialize time series when infection mode is enabled
   useEffect(() => {
@@ -133,15 +119,16 @@ export default function App() {
     }
   }, [state.history.length, infectionMode]);
 
+  function handleSessionSubmit(name: string) {
+    setSessionName(name);
+    setSessionDate(formatDate(new Date()));
+    setGameNumber(1);
+    setTimeSeries([]);
+    setShowSessionDialog(false);
+  }
+
   function startNewSession() {
-    const name = window.prompt('Enter new Session Name:');
-    if (name) {
-      setSessionName(name);
-      setSessionDate(formatDate(new Date()));
-      setGameNumber(1);
-      setTimeSeries([]);
-      resetGrid(state.gridSize.rows, state.gridSize.cols);
-    }
+    setShowSessionDialog(true);
   }
 
   function resetGrid(rows: number, cols: number) {
@@ -234,6 +221,10 @@ export default function App() {
       };
     });
     setPendingSource(null);
+  }
+
+  if (showSessionDialog) {
+    return <SessionDialog onSubmit={handleSessionSubmit} />;
   }
 
   return (
