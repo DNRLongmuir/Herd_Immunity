@@ -8,6 +8,7 @@ import InfectionModeToggle from './InfectionModeToggle';
 import VaccinationEfficacyToggle from './VaccinationEfficacyToggle';
 import TimeSeriesChart from './TimeSeriesChart';
 import SessionDialog from './SessionDialog';
+import ConfirmationDialog from './ConfirmationDialog';
 
 const createInitialNodes = (rows: number, cols: number) => {
   const nodes: Record<string, GridNode> = {};
@@ -70,6 +71,7 @@ export default function App() {
   const [sessionDate, setSessionDate] = useState<string>('');
   const [gameNumber, setGameNumber] = useState<number>(1);
   const [showSessionDialog, setShowSessionDialog] = useState<boolean>(true);
+  const [showEndGameDialog, setShowEndGameDialog] = useState<boolean>(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Initialize time series when infection mode is enabled
@@ -78,33 +80,7 @@ export default function App() {
       const currentCounts = countNodeStates(state.nodes);
       setTimeSeries(prev => prev.length === 0 ? [{ step: 0, counts: currentCounts }] : prev);
     } else {
-      // When infection mode is turned off, prompt for game completion
-      if (timeSeries.length > 0) {
-        const isComplete = window.confirm('Is this the end of the simulation?');
-        if (isComplete) {
-          // Save current game data
-          const sessions = getStoredSessions();
-          const sessionKey = `${sessionName} — ${sessionDate}`;
-          const updatedSessions = {
-            ...sessions,
-            [sessionKey]: {
-              ...sessions[sessionKey],
-              games: {
-                ...sessions[sessionKey]?.games,
-                [gameNumber]: {
-                  timeSeries,
-                  completedAt: new Date().toISOString()
-                }
-              }
-            }
-          };
-          localStorage.setItem('herdImmunitySessions', JSON.stringify(updatedSessions));
-          
-          // Increment game number and clear time series
-          setGameNumber(prev => prev + 1);
-          setTimeSeries([]);
-        }
-      }
+      setShowEndGameDialog(timeSeries.length > 0);
     }
   }, [infectionMode]);
 
@@ -129,6 +105,33 @@ export default function App() {
 
   function startNewSession() {
     setShowSessionDialog(true);
+  }
+
+  function handleEndGameConfirm(isComplete: boolean) {
+    if (isComplete) {
+      // Save current game data
+      const sessions = getStoredSessions();
+      const sessionKey = `${sessionName} — ${sessionDate}`;
+      const updatedSessions = {
+        ...sessions,
+        [sessionKey]: {
+          ...sessions[sessionKey],
+          games: {
+            ...sessions[sessionKey]?.games,
+            [gameNumber]: {
+              timeSeries,
+              completedAt: new Date().toISOString()
+            }
+          }
+        }
+      };
+      localStorage.setItem('herdImmunitySessions', JSON.stringify(updatedSessions));
+      
+      // Increment game number and clear time series
+      setGameNumber(prev => prev + 1);
+      setTimeSeries([]);
+    }
+    setShowEndGameDialog(false);
   }
 
   function resetGrid(rows: number, cols: number) {
@@ -335,6 +338,15 @@ export default function App() {
 
         {/* Time Series Chart */}
         {showTimeSeries && <TimeSeriesChart timeSeries={timeSeries} show={showTimeSeries} />}
+
+        {/* End Game Dialog */}
+        {showEndGameDialog && (
+          <ConfirmationDialog
+            message="Is this the end of the simulation?"
+            onConfirm={() => handleEndGameConfirm(true)}
+            onCancel={() => handleEndGameConfirm(false)}
+          />
+        )}
       </div>
     </div>
   );
