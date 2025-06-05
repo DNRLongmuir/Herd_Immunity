@@ -68,11 +68,12 @@ export default function App() {
   const [sessionName, setSessionName] = useState<string>('');
   const [sessionDate, setSessionDate] = useState<string>('');
   const [gameNumber, setGameNumber] = useState<number>(1);
+  const [hasInitialized, setHasInitialized] = useState<boolean>(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // Initialize session on component mount
+  // Initialize session only once on component mount
   useEffect(() => {
-    const promptSession = () => {
+    if (!hasInitialized) {
       const name = window.prompt('Enter Session Name (e.g. "Spring 2025 Workshop"):');
       if (name) {
         setSessionName(name);
@@ -81,9 +82,9 @@ export default function App() {
         setGameNumber(1);
         setTimeSeries([]);
       }
-    };
-    promptSession();
-  }, []);
+      setHasInitialized(true);
+    }
+  }, [hasInitialized]);
 
   // Initialize time series when infection mode is enabled
   useEffect(() => {
