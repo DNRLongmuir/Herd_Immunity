@@ -33,12 +33,14 @@ export interface GameState {
 export interface StatePaletteProps {
   selectedState: NodeState | null;
   setSelectedState: (newState: NodeState | null) => void;
+  disabled?: boolean;
 }
 
 // Props for InfectionModeToggle component
 export interface InfectionModeToggleProps {
   infectionMode: boolean;
   setInfectionMode: (flag: boolean) => void;
+  disabled?: boolean;
 }
 
 // Props for VaccinationEfficacyToggle component
@@ -47,6 +49,7 @@ export interface VaccinationEfficacyToggleProps {
   setVaccinationMode: (flag: boolean) => void;
   vaccinationLabel: string | null;
   setVaccinationLabel: (label: string | null) => void;
+  disabled?: boolean;
 }
 
 // Props for Grid component
@@ -58,6 +61,7 @@ export interface GridProps {
   vaccinationMode: boolean;
   pendingSource: string | null;
   setPendingSource: (id: string | null) => void;
+  disabled?: boolean;
 }
 
 // Props for InfectionArrows component
@@ -78,4 +82,11 @@ export interface SessionData {
     timeSeries: Array<{ step: number; counts: Record<NodeState, number> }>;
     completedAt: string;
   }>;
+}
+
+// Auto-play state
+export interface AutoPlayState {
+  isRunning: boolean;
+  queue: string[];
+  currentStep: number;
 }

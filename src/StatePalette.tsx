@@ -2,7 +2,7 @@ import React from 'react';
 import { NodeState, StatePaletteProps } from './types';
 import { getColorForState } from './utils/colorMapping';
 
-const StatePalette: React.FC<StatePaletteProps> = ({ selectedState, setSelectedState }) => {
+const StatePalette: React.FC<StatePaletteProps> = ({ selectedState, setSelectedState, disabled = false }) => {
   const states: NodeState[] = [
     "Susceptible",
     "VaccinatedSafe",
@@ -13,6 +13,8 @@ const StatePalette: React.FC<StatePaletteProps> = ({ selectedState, setSelectedS
   ];
 
   const handleStateClick = (state: NodeState) => {
+    if (disabled) return;
+    
     if (selectedState === state) {
       setSelectedState(null);
     } else {
@@ -26,12 +28,15 @@ const StatePalette: React.FC<StatePaletteProps> = ({ selectedState, setSelectedS
         <button
           key={state}
           onClick={() => handleStateClick(state)}
-          className="w-10 h-10 rounded transition-all duration-200 flex items-center justify-center text-xs font-bold"
+          disabled={disabled}
+          className={`w-10 h-10 rounded transition-all duration-200 flex items-center justify-center text-xs font-bold ${
+            disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+          }`}
           style={{
             backgroundColor: getColorForState(state),
             border: selectedState === state ? '2px solid black' : '2px solid transparent',
           }}
-          title={state}
+          title={disabled ? 'Disabled during Auto-Play' : state}
         >
           {state.charAt(0)}
         </button>

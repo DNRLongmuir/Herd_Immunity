@@ -10,12 +10,15 @@ const Grid: React.FC<GridProps> = ({
   infectionMode,
   vaccinationMode,
   pendingSource,
-  setPendingSource
+  setPendingSource,
+  disabled = false
 }) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingInfection, setPendingInfection] = useState<{ from: string; to: string } | null>(null);
 
   const handleNodeClick = (nodeId: string) => {
+    if (disabled) return;
+    
     const node = state.nodes[nodeId];
 
     if (infectionMode) {
@@ -97,14 +100,22 @@ const Grid: React.FC<GridProps> = ({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              cursor: infectionMode ? "crosshair" : selectedState ? "pointer" : "default",
+              cursor: disabled 
+                ? "not-allowed" 
+                : infectionMode 
+                ? "crosshair" 
+                : selectedState 
+                ? "pointer" 
+                : "default",
               backgroundColor: getColorForState(node.state),
               position: "relative",
               fontSize: "20px",
               fontWeight: "bold",
               userSelect: "none",
               border: pendingSource === node.id ? "2px solid #ff4444" : "none",
+              opacity: disabled ? 0.7 : 1,
             }}
+            title={disabled ? 'Disabled during Auto-Play' : undefined}
           >
             {node.state.charAt(0).toUpperCase()}
           </div>
