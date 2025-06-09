@@ -45,6 +45,7 @@ export class AutoPlaySimulator {
       Infected: 0,
       Immune: 0,
       InfectionAttemptFailed: 0,
+      Recovered: 0,
     };
     
     Object.values(nodes).forEach(node => {
@@ -86,7 +87,12 @@ export class AutoPlaySimulator {
           // Add successful infection to queue for future processing
           this.queue.push(neighborId);
         } else {
-          updatedNodes[neighborId].state = "InfectionAttemptFailed";
+          // Handle failed infection based on model type
+          if (prevState.modelType === "SIR") {
+            updatedNodes[neighborId].state = "Recovered";
+          } else {
+            updatedNodes[neighborId].state = "InfectionAttemptFailed";
+          }
         }
 
         const newHistoryEntry = {

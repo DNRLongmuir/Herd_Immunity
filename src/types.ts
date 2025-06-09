@@ -5,7 +5,11 @@ export type NodeState =
   | "VaccinatedFailed"
   | "Infected"
   | "Immune"
-  | "InfectionAttemptFailed";
+  | "InfectionAttemptFailed"
+  | "Recovered"; // New state for SIR model
+
+// Define model types
+export type ModelType = "SIR" | "SI";
 
 // Define the structure for a single grid node
 export interface GridNode {
@@ -27,6 +31,7 @@ export interface GameState {
     success: boolean; 
     timestamp: number 
   }>;
+  modelType: ModelType;        // New field for model type
 }
 
 // Props for StatePalette component
@@ -34,6 +39,7 @@ export interface StatePaletteProps {
   selectedState: NodeState | null;
   setSelectedState: (newState: NodeState | null) => void;
   disabled?: boolean;
+  modelType: ModelType;        // New prop for model type
 }
 
 // Props for InfectionModeToggle component
@@ -49,6 +55,13 @@ export interface VaccinationEfficacyToggleProps {
   setVaccinationMode: (flag: boolean) => void;
   vaccinationLabel: string | null;
   setVaccinationLabel: (label: string | null) => void;
+  disabled?: boolean;
+}
+
+// Props for ModelTypeSelector component
+export interface ModelTypeSelectorProps {
+  modelType: ModelType;
+  setModelType: (modelType: ModelType) => void;
   disabled?: boolean;
 }
 

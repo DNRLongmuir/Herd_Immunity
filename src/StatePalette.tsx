@@ -2,15 +2,31 @@ import React from 'react';
 import { NodeState, StatePaletteProps } from './types';
 import { getColorForState } from './utils/colorMapping';
 
-const StatePalette: React.FC<StatePaletteProps> = ({ selectedState, setSelectedState, disabled = false }) => {
-  const states: NodeState[] = [
-    "Susceptible",
-    "VaccinatedSafe",
-    "VaccinatedFailed",
-    "Infected",
-    "Immune",
-    "InfectionAttemptFailed"
-  ];
+const StatePalette: React.FC<StatePaletteProps> = ({ 
+  selectedState, 
+  setSelectedState, 
+  disabled = false, 
+  modelType 
+}) => {
+  // Define states based on model type
+  const getStatesForModel = (): NodeState[] => {
+    const baseStates: NodeState[] = [
+      "Susceptible",
+      "VaccinatedSafe", 
+      "VaccinatedFailed",
+      "Infected",
+      "Immune",
+      "InfectionAttemptFailed"
+    ];
+
+    if (modelType === "SIR") {
+      return [...baseStates, "Recovered"];
+    }
+    
+    return baseStates;
+  };
+
+  const states = getStatesForModel();
 
   const handleStateClick = (state: NodeState) => {
     if (disabled) return;
@@ -19,6 +35,19 @@ const StatePalette: React.FC<StatePaletteProps> = ({ selectedState, setSelectedS
       setSelectedState(null);
     } else {
       setSelectedState(state);
+    }
+  };
+
+  const getStateLabel = (state: NodeState): string => {
+    switch (state) {
+      case "Susceptible": return "S";
+      case "VaccinatedSafe": return "V";
+      case "VaccinatedFailed": return "F";
+      case "Infected": return "I";
+      case "Immune": return "M";
+      case "InfectionAttemptFailed": return "F";
+      case "Recovered": return "R";
+      default: return state.charAt(0);
     }
   };
 
@@ -38,7 +67,7 @@ const StatePalette: React.FC<StatePaletteProps> = ({ selectedState, setSelectedS
           }}
           title={disabled ? 'Disabled during Auto-Play' : state}
         >
-          {state.charAt(0)}
+          {getStateLabel(state)}
         </button>
       ))}
     </div>

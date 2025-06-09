@@ -32,6 +32,7 @@ const TimeSeriesChart: React.FC<Props> = ({ timeSeries, show }) => {
     Infected: entry.counts["Infected"],
     Immune: entry.counts["Immune"],
     InfectionAttemptFailed: entry.counts["InfectionAttemptFailed"],
+    Recovered: entry.counts["Recovered"],
   }));
 
   return (
@@ -95,6 +96,14 @@ const TimeSeriesChart: React.FC<Props> = ({ timeSeries, show }) => {
             strokeWidth={2}
             dot={false}
             name="Inf Failed"
+          />
+          <Line
+            type="monotone"
+            dataKey="Recovered"
+            stroke="#90EE90"
+            strokeWidth={2}
+            dot={false}
+            name="Recovered"
           />
         </LineChart>
       </ResponsiveContainer>

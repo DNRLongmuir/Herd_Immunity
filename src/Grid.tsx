@@ -52,13 +52,25 @@ const Grid: React.FC<GridProps> = ({
         if (vaccinationMode && targetNode.state === "VaccinatedSafe") {
           targetNode.state = "VaccinatedFailed";
         } else if (targetNode.state !== "Immune" && 
-                  targetNode.state !== "VaccinatedSafe") {
+                  targetNode.state !== "VaccinatedSafe" &&
+                  targetNode.state !== "Recovered") { // Recovered nodes can't be infected in SIR
           targetNode.state = "Infected";
         }
       } else {
-        if (targetNode.state !== "Immune" && 
-            targetNode.state !== "VaccinatedSafe") {
-          targetNode.state = "InfectionAttemptFailed";
+        // Handle failed infection based on model type
+        if (state.modelType === "SIR") {
+          // In SIR model, failed infection leads to recovery
+          if (targetNode.state !== "Immune" && 
+              targetNode.state !== "VaccinatedSafe" &&
+              targetNode.state !== "Recovered") {
+            targetNode.state = "Recovered";
+          }
+        } else {
+          // In SI model, failed infection leaves node susceptible or marks as failed attempt
+          if (targetNode.state !== "Immune" && 
+              targetNode.state !== "VaccinatedSafe") {
+            targetNode.state = "InfectionAttemptFailed";
+          }
         }
       }
 
@@ -77,6 +89,19 @@ const Grid: React.FC<GridProps> = ({
     setPendingSource(null);
     setPendingInfection(null);
     setShowConfirmation(false);
+  };
+
+  const getStateLabel = (state: NodeState): string => {
+    switch (state) {
+      case "Susceptible": return "S";
+      case "VaccinatedSafe": return "V";
+      case "VaccinatedFailed": return "F";
+      case "Infected": return "I";
+      case "Immune": return "M";
+      case "InfectionAttemptFailed": return "F";
+      case "Recovered": return "R";
+      default: return state.charAt(0).toUpperCase();
+    }
   };
 
   return (
@@ -117,7 +142,7 @@ const Grid: React.FC<GridProps> = ({
             }}
             title={disabled ? 'Disabled during Auto-Play' : undefined}
           >
-            {node.state.charAt(0).toUpperCase()}
+            {getStateLabel(node.state)}
           </div>
         ))}
       </div>

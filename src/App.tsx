@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { toPng } from 'html-to-image';
-import { GameState, GridNode, NodeState, SessionData } from './types';
+import { GameState, GridNode, NodeState, SessionData, ModelType } from './types';
 import { AutoPlaySimulator } from './utils/autoPlaySimulator';
 import Grid from './Grid';
 import InfectionArrows from './InfectionArrows';
 import StatePalette from './StatePalette';
 import InfectionModeToggle from './InfectionModeToggle';
 import VaccinationEfficacyToggle from './VaccinationEfficacyToggle';
+import ModelTypeSelector from './components/ModelTypeSelector';
 import TimeSeriesChart from './TimeSeriesChart';
 import SessionDialog from './SessionDialog';
 import ConfirmationDialog from './ConfirmationDialog';
@@ -31,6 +32,7 @@ const initialGameState: GameState = {
   gridSize: { rows: 5, cols: 5 },
   nodes: createInitialNodes(5, 5),
   history: [],
+  modelType: "SIR", // Default to SIR model
 };
 
 const formatDate = (date: Date): string => {
@@ -50,6 +52,7 @@ const countNodeStates = (nodes: Record<string, GridNode>): Record<NodeState, num
     Infected: 0,
     Immune: 0,
     InfectionAttemptFailed: 0,
+    Recovered: 0,
   };
   
   Object.values(nodes).forEach(node => {
@@ -168,13 +171,41 @@ export default function App() {
     setAutoPlayRunning(false);
     
     const freshNodes = createInitialNodes(rows, cols);
-    setState({
+    setState(prev => ({
       gridSize: { rows, cols },
       nodes: freshNodes,
       history: [],
-    });
+      modelType: prev.modelType, // Preserve model type
+    }));
     setPendingSource(null);
     setTimeSeries([]);
+  }
+
+  function handleModelTypeChange(newModelType: ModelType) {
+    // Check if grid is not fresh (has history or time series data)
+    const hasData = state.history.length > 0 || timeSeries.length > 0;
+    
+    if (hasData) {
+      // Reset grid and increment game number
+      const freshNodes = createInitialNodes(state.gridSize.rows, state.gridSize.cols);
+      setState(prev => ({
+        ...prev,
+        nodes: freshNodes,
+        history: [],
+        modelType: newModelType,
+      }));
+      setPendingSource(null);
+      setTimeSeries([]);
+      setGameNumber(prev => prev + 1);
+      
+      console.log(`Model type changed from ${state.modelType} to ${newModelType}, grid reset, game number incremented to ${gameNumber + 1}`);
+    } else {
+      // Just change the model type
+      setState(prev => ({
+        ...prev,
+        modelType: newModelType,
+      }));
+    }
   }
 
   function undoLastEvent() {
@@ -275,6 +306,7 @@ export default function App() {
   }
 
   const isControlsDisabled = autoPlayRunning;
+  const isModelTypeDisabled = infectionMode || autoPlayRunning;
 
   if (showSessionDialog) {
     return <SessionDialog onSubmit={handleSessionSubmit} />;
@@ -412,6 +444,7 @@ export default function App() {
             selectedState={selectedState}
             setSelectedState={setSelectedState}
             disabled={isControlsDisabled}
+            modelType={state.modelType}
           />
           <InfectionModeToggle
             infectionMode={infectionMode}
@@ -424,6 +457,11 @@ export default function App() {
             vaccinationLabel={vaccinationLabel}
             setVaccinationLabel={setVaccinationLabel}
             disabled={isControlsDisabled}
+          />
+          <ModelTypeSelector
+            modelType={state.modelType}
+            setModelType={handleModelTypeChange}
+            disabled={isModelTypeDisabled}
           />
         </div>
 
@@ -438,7 +476,7 @@ export default function App() {
           ) : (
             <p className="text-gray-500">
               {infectionMode
-                ? "Click an infected cell to start an infection"
+                ? `Click an infected cell to start an infection (${state.modelType} model)`
                 : selectedState
                 ? `Click cells to set them to ${selectedState}`
                 : "Select a state from the palette or enable infection mode"}

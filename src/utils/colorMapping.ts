@@ -14,6 +14,8 @@ export const getColorForState = (state: NodeState): string => {
       return "#87cefa";
     case "InfectionAttemptFailed":
       return "#ffd700";
+    case "Recovered":
+      return "#90EE90"; // Light green for recovered state
     default:
       return "#e0e0e0";
   }
