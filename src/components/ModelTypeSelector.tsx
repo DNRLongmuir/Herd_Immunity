@@ -8,7 +8,7 @@ const ModelTypeSelector: React.FC<ModelTypeSelectorProps> = ({
 }) => {
   return (
     <div className="flex items-center gap-2">
-      <label htmlFor="model-type" className="text-sm font-medium text-gray-700">
+      <label htmlFor="model-type\" className="text-sm font-medium text-gray-700">
         Model Type:
       </label>
       <select
