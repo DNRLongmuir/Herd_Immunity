@@ -77,6 +77,7 @@ export class AutoPlaySimulator {
       
       console.log(`Attempting infection from ${currentNodeId} to ${neighborId}: ${success ? 'SUCCESS' : 'FAILED'}`);
 
+      // Update state and time series in a single operation
       this.setState(prevState => {
         const updatedNodes = { ...prevState.nodes };
         
@@ -95,21 +96,20 @@ export class AutoPlaySimulator {
           timestamp: Date.now()
         };
 
-        return {
+        const newState = {
           ...prevState,
           nodes: updatedNodes,
           history: [...prevState.history, newHistoryEntry]
         };
-      });
 
-      // Update time series after state change
-      this.setState(currentState => {
-        const currentCounts = this.countNodeStates(currentState.nodes);
+        // Update time series immediately after state change
+        const currentCounts = this.countNodeStates(updatedNodes);
         this.setTimeSeries(prev => [...prev, { 
           step: prev.length, 
           counts: currentCounts 
         }]);
-        return currentState;
+
+        return newState;
       });
     }
   }
@@ -154,11 +154,20 @@ export class AutoPlaySimulator {
         timestamp: Date.now()
       };
 
-      return {
+      const newState = {
         ...prevState,
         nodes: updatedNodes,
         history: [...prevState.history, newHistoryEntry]
       };
+
+      // Update time series for seeded infection
+      const currentCounts = this.countNodeStates(updatedNodes);
+      this.setTimeSeries(prev => [...prev, { 
+        step: prev.length, 
+        counts: currentCounts 
+      }]);
+
+      return newState;
     });
 
     return randomNode.id;
