@@ -55,80 +55,81 @@ export class AutoPlaySimulator {
   }
 
   private async processInfectedNode(currentNodeId: string, gameState: GameState): Promise<void> {
-  if (!this.isRunning) return;
-
-  // Get all orthogonal neighbors once
-  const neighbors = this.getOrthogonalNeighbors(currentNodeId, gameState.gridSize);
-
-  // Loop through each neighbor and decide eligibility at runtime
-  for (const neighborId of neighbors) {
     if (!this.isRunning) return;
 
-    // Always read the latest state
-    const neighbourState = gameState.nodes[neighborId]?.state;
-    // Skip anything that isn’t Susceptible
-    if (neighbourState !== "Susceptible") continue;
-    // In SI mode, vaccinated‐safe nodes are forbidden targets
-    if (gameState.modelType === "SI" && neighbourState === "VaccinatedSafe") {
-      window.alert("Infection cannot target a vaccinated node");
-      continue;
-    }
+    // Get all orthogonal neighbors once
+    const neighbors = this.getOrthogonalNeighbors(currentNodeId, gameState.gridSize);
 
-    // Wait 1 second before attempting infection
-    await this.delay(1000);
-    if (!this.isRunning) return;
+    // Loop through each neighbor and decide eligibility at runtime
+    for (const neighborId of neighbors) {
+      if (!this.isRunning) return;
 
-    // 50/50 infection attempt
-    const success = Math.random() < 0.5;
-    console.log(
-      `Attempting infection from ${currentNodeId} to ${neighborId}: ${
-        success ? "SUCCESS" : "FAILED"
-      } (${gameState.modelType} mode)`
-    );
-
-    // Update state, queue, history, and time series
-    this.setState(prevState => {
-      const updatedNodes = { ...prevState.nodes };
-      const targetNode = updatedNodes[neighborId];
-
-      if (prevState.modelType === "SIR") {
-        // SIR: failure → R (Immune), success → I
-        if (success) {
-          targetNode.state = "Infected";
-          this.queue.push(neighborId);
-        } else {
-          targetNode.state = "Immune";
-        }
-      } else {
-        // SI: failure → stay Susceptible, success → I
-        if (success) {
-          targetNode.state = "Infected";
-          this.queue.push(neighborId);
-        }
+      // Always read the latest state
+      const neighbourState = gameState.nodes[neighborId]?.state;
+      // Skip anything that isn't Susceptible
+      if (neighbourState !== "Susceptible") continue;
+      // In SI mode, vaccinated‐safe nodes are forbidden targets
+      if (gameState.modelType === "SI" && neighbourState === "VaccinatedSafe") {
+        window.alert("Infection cannot target a vaccinated node");
+        continue;
       }
 
-      const newHistoryEntry = {
-        from: currentNodeId,
-        to: neighborId,
-        success,
-        timestamp: Date.now(),
-      };
+      // Wait 1 second before attempting infection
+      await this.delay(1000);
+      if (!this.isRunning) return;
 
-      const newState: GameState = {
-        ...prevState,
-        nodes: updatedNodes,
-        history: [...prevState.history, newHistoryEntry],
-      };
+      // 50/50 infection attempt
+      const success = Math.random() < 0.5;
+      console.log(
+        `Attempting infection from ${currentNodeId} to ${neighborId}: ${
+          success ? "SUCCESS" : "FAILED"
+        } (${gameState.modelType} mode)`
+      );
 
-      // Update the time series snapshot
-      const currentCounts = this.countNodeStates(updatedNodes);
-      this.setTimeSeries(ts => [
-        ...ts,
-        { step: ts.length, counts: currentCounts },
-      ]);
+      // Update state, queue, history, and time series
+      this.setState(prevState => {
+        const updatedNodes = { ...prevState.nodes };
+        const targetNode = updatedNodes[neighborId];
 
-      return newState;
-    });
+        if (prevState.modelType === "SIR") {
+          // SIR: failure → R (Immune), success → I
+          if (success) {
+            targetNode.state = "Infected";
+            this.queue.push(neighborId);
+          } else {
+            targetNode.state = "Immune";
+          }
+        } else {
+          // SI: failure → stay Susceptible, success → I
+          if (success) {
+            targetNode.state = "Infected";
+            this.queue.push(neighborId);
+          }
+        }
+
+        const newHistoryEntry = {
+          from: currentNodeId,
+          to: neighborId,
+          success,
+          timestamp: Date.now(),
+        };
+
+        const newState: GameState = {
+          ...prevState,
+          nodes: updatedNodes,
+          history: [...prevState.history, newHistoryEntry],
+        };
+
+        // Update the time series snapshot
+        const currentCounts = this.countNodeStates(updatedNodes);
+        this.setTimeSeries(ts => [
+          ...ts,
+          { step: ts.length, counts: currentCounts },
+        ]);
+
+        return newState;
+      });
+    }
   }
 
   private delay(ms: number): Promise<void> {
