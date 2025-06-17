@@ -57,6 +57,13 @@ export class AutoPlaySimulator {
   private async processInfectedNode(currentNodeId: string, gameState: GameState): Promise<void> {
     if (!this.isRunning) return;
 
+    // CRITICAL: Only process if the current node is still Infected
+    const currentNode = gameState.nodes[currentNodeId];
+    if (!currentNode || currentNode.state !== "Infected") {
+      console.log(`Skipping node ${currentNodeId} - no longer infected (state: ${currentNode?.state})`);
+      return;
+    }
+
     // Get all orthogonal neighbors
     const neighbors = this.getOrthogonalNeighbors(currentNodeId, gameState.gridSize);
 
