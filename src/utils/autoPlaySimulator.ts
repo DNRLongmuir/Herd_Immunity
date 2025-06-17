@@ -130,7 +130,6 @@ export class AutoPlaySimulator {
       return newState;
     });
   }
-}
 
   private delay(ms: number): Promise<void> {
     return new Promise((resolve, reject) => {
