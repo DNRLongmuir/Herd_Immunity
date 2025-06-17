@@ -11,7 +11,7 @@ export const getColorForState = (state: NodeState): string => {
     case "Infected":
       return "#ff4444";
     case "Immune":
-      return "#87cefa";
+      return "#90EE90"; // Light green for immune state (R in SIR model)
     case "InfectionAttemptFailed":
       return "#ffd700";
     default:

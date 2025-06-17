@@ -2,21 +2,50 @@ import React from 'react';
 import { NodeState, StatePaletteProps } from './types';
 import { getColorForState } from './utils/colorMapping';
 
-const StatePalette: React.FC<StatePaletteProps> = ({ selectedState, setSelectedState }) => {
-  const states: NodeState[] = [
-    "Susceptible",
-    "VaccinatedSafe",
-    "VaccinatedFailed",
-    "Infected",
-    "Immune",
-    "InfectionAttemptFailed"
-  ];
+const StatePalette: React.FC<StatePaletteProps> = ({ 
+  selectedState, 
+  setSelectedState, 
+  disabled = false, 
+  modelType 
+}) => {
+  // Define states based on model type
+  const getStatesForModel = (): NodeState[] => {
+    const baseStates: NodeState[] = [
+      "Susceptible",
+      "VaccinatedSafe", 
+      "VaccinatedFailed",
+      "Infected",
+      "Immune"
+    ];
+
+    if (modelType === "SI") {
+      return [...baseStates, "InfectionAttemptFailed"];
+    }
+    
+    return baseStates;
+  };
+
+  const states = getStatesForModel();
 
   const handleStateClick = (state: NodeState) => {
+    if (disabled) return;
+    
     if (selectedState === state) {
       setSelectedState(null);
     } else {
       setSelectedState(state);
+    }
+  };
+
+  const getStateLabel = (state: NodeState): string => {
+    switch (state) {
+      case "Susceptible": return "S";
+      case "VaccinatedSafe": return "V";
+      case "VaccinatedFailed": return "F";
+      case "Infected": return "I";
+      case "Immune": return "R"; // R for Recovered/Removed in SIR model
+      case "InfectionAttemptFailed": return "F";
+      default: return state.charAt(0);
     }
   };
 
@@ -26,14 +55,17 @@ const StatePalette: React.FC<StatePaletteProps> = ({ selectedState, setSelectedS
         <button
           key={state}
           onClick={() => handleStateClick(state)}
-          className="w-10 h-10 rounded transition-all duration-200 flex items-center justify-center text-xs font-bold"
+          disabled={disabled}
+          className={`w-10 h-10 rounded transition-all duration-200 flex items-center justify-center text-xs font-bold ${
+            disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+          }`}
           style={{
             backgroundColor: getColorForState(state),
             border: selectedState === state ? '2px solid black' : '2px solid transparent',
           }}
-          title={state}
+          title={disabled ? 'Disabled during Auto-Play' : state}
         >
-          {state.charAt(0)}
+          {getStateLabel(state)}
         </button>
       ))}
     </div>

@@ -83,10 +83,10 @@ const TimeSeriesChart: React.FC<Props> = ({ timeSeries, show }) => {
           <Line
             type="monotone"
             dataKey="Immune"
-            stroke="#87cefa"
+            stroke="#90EE90"
             strokeWidth={2}
             dot={false}
-            name="Immune"
+            name="Immune (R)"
           />
           <Line
             type="monotone"

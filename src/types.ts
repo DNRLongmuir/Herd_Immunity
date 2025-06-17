@@ -7,6 +7,9 @@ export type NodeState =
   | "Immune"
   | "InfectionAttemptFailed";
 
+// Define model types
+export type ModelType = "SIR" | "SI";
+
 // Define the structure for a single grid node
 export interface GridNode {
   id: string;                  // e.g. "r2c3", uniquely identifies a cell
@@ -27,18 +30,22 @@ export interface GameState {
     success: boolean; 
     timestamp: number 
   }>;
+  modelType: ModelType;        // New field for model type
 }
 
 // Props for StatePalette component
 export interface StatePaletteProps {
   selectedState: NodeState | null;
   setSelectedState: (newState: NodeState | null) => void;
+  disabled?: boolean;
+  modelType: ModelType;        // New prop for model type
 }
 
 // Props for InfectionModeToggle component
 export interface InfectionModeToggleProps {
   infectionMode: boolean;
   setInfectionMode: (flag: boolean) => void;
+  disabled?: boolean;
 }
 
 // Props for VaccinationEfficacyToggle component
@@ -47,6 +54,14 @@ export interface VaccinationEfficacyToggleProps {
   setVaccinationMode: (flag: boolean) => void;
   vaccinationLabel: string | null;
   setVaccinationLabel: (label: string | null) => void;
+  disabled?: boolean;
+}
+
+// Props for ModelTypeSelector component
+export interface ModelTypeSelectorProps {
+  modelType: ModelType;
+  setModelType: (modelType: ModelType) => void;
+  disabled?: boolean;
 }
 
 // Props for Grid component
@@ -58,6 +73,7 @@ export interface GridProps {
   vaccinationMode: boolean;
   pendingSource: string | null;
   setPendingSource: (id: string | null) => void;
+  disabled?: boolean;
 }
 
 // Props for InfectionArrows component
@@ -78,4 +94,11 @@ export interface SessionData {
     timeSeries: Array<{ step: number; counts: Record<NodeState, number> }>;
     completedAt: string;
   }>;
+}
+
+// Auto-play state
+export interface AutoPlayState {
+  isRunning: boolean;
+  queue: string[];
+  currentStep: number;
 }

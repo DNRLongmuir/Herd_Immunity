@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { VaccinationEfficacyToggleProps } from './types';
-import SessionDialog from './SessionDialog';
 
 const VaccinationEfficacyToggle: React.FC<VaccinationEfficacyToggleProps> = ({
   vaccinationMode,
   setVaccinationMode,
   vaccinationLabel,
   setVaccinationLabel,
+  disabled = false,
 }) => {
   const [showDialog, setShowDialog] = useState(false);
 
@@ -17,6 +17,8 @@ const VaccinationEfficacyToggle: React.FC<VaccinationEfficacyToggleProps> = ({
   };
 
   const onClickToggle = () => {
+    if (disabled) return;
+    
     if (!vaccinationMode) {
       setShowDialog(true);
     } else {
@@ -29,11 +31,15 @@ const VaccinationEfficacyToggle: React.FC<VaccinationEfficacyToggleProps> = ({
     <div className="flex items-center gap-2">
       <button
         onClick={onClickToggle}
+        disabled={disabled}
         className={`px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${
-          vaccinationMode
+          disabled
+            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            : vaccinationMode
             ? 'bg-yellow-500 text-white hover:bg-yellow-600'
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
         }`}
+        title={disabled ? 'Disabled during Auto-Play' : 'Toggle Vaccination Efficacy'}
       >
         Vaccination Efficacy
       </button>
@@ -58,6 +64,7 @@ const VaccinationEfficacyToggle: React.FC<VaccinationEfficacyToggleProps> = ({
                 <input
                   type="text"
                   id="efficacy"
+                  name="efficacy"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter efficacy"
                   autoFocus
