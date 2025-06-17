@@ -14,6 +14,7 @@ const Grid: React.FC<GridProps> = ({
   disabled = false
 }) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showVaccinatedWarning, setShowVaccinatedWarning] = useState(false);
   const [pendingInfection, setPendingInfection] = useState<{ from: string; to: string } | null>(null);
 
   const handleNodeClick = (nodeId: string) => {
@@ -28,7 +29,21 @@ const Grid: React.FC<GridProps> = ({
           setPendingSource(nodeId);
         }
       } else {
-        // Show confirmation dialog for infection attempt
+        // Check if target is valid based on model type
+        if (state.modelType === "SI" && node.state === "VaccinatedSafe") {
+          // In SI mode, show warning for VaccinatedSafe targets
+          setShowVaccinatedWarning(true);
+          setPendingSource(null); // Clear pending source
+          return;
+        }
+        
+        if (state.modelType === "SIR" && node.state === "Immune") {
+          // In SIR mode, silently ignore Immune (Recovered) targets
+          setPendingSource(null); // Clear pending source
+          return;
+        }
+        
+        // Show confirmation dialog for valid infection attempt
         setPendingInfection({ from: pendingSource, to: nodeId });
         setShowConfirmation(true);
       }
@@ -150,6 +165,22 @@ const Grid: React.FC<GridProps> = ({
           onConfirm={() => handleInfectionConfirm(true)}
           onCancel={() => handleInfectionConfirm(false)}
         />
+      )}
+
+      {showVaccinatedWarning && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <p className="text-lg mb-6">Infection cannot target a vaccinated node.</p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowVaccinatedWarning(false)}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

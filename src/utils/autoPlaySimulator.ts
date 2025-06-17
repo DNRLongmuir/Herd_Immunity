@@ -58,13 +58,24 @@ export class AutoPlaySimulator {
     if (!this.isRunning) return;
 
     const neighbors = this.getOrthogonalNeighbors(currentNodeId, gameState.gridSize);
-    const susceptibleNeighbors = neighbors.filter(
-      neighborId => gameState.nodes[neighborId]?.state === "Susceptible"
-    );
+    
+    // Filter neighbors based on model type
+    let eligibleNeighbors: string[];
+    if (gameState.modelType === "SIR") {
+      // In SIR mode, only target Susceptible neighbors (skip Immune/Recovered)
+      eligibleNeighbors = neighbors.filter(
+        neighborId => gameState.nodes[neighborId]?.state === "Susceptible"
+      );
+      console.log(`SIR mode: Processing infected node ${currentNodeId}, found ${eligibleNeighbors.length} susceptible neighbors (excluding Immune)`);
+    } else {
+      // In SI mode, only target Susceptible neighbors (skip VaccinatedSafe entirely)
+      eligibleNeighbors = neighbors.filter(
+        neighborId => gameState.nodes[neighborId]?.state === "Susceptible"
+      );
+      console.log(`SI mode: Processing infected node ${currentNodeId}, found ${eligibleNeighbors.length} susceptible neighbors (excluding VaccinatedSafe)`);
+    }
 
-    console.log(`Processing infected node ${currentNodeId}, found ${susceptibleNeighbors.length} susceptible neighbors`);
-
-    for (const neighborId of susceptibleNeighbors) {
+    for (const neighborId of eligibleNeighbors) {
       if (!this.isRunning) return;
 
       // Wait 1 second before processing each neighbor
@@ -75,7 +86,7 @@ export class AutoPlaySimulator {
       // 50/50 random outcome
       const success = Math.random() < 0.5;
       
-      console.log(`Attempting infection from ${currentNodeId} to ${neighborId}: ${success ? 'SUCCESS' : 'FAILED'}`);
+      console.log(`Attempting infection from ${currentNodeId} to ${neighborId}: ${success ? 'SUCCESS' : 'FAILED'} (${gameState.modelType} mode)`);
 
       // Update state based on model type and outcome
       this.setState(prevState => {
@@ -88,19 +99,23 @@ export class AutoPlaySimulator {
             targetNode.state = "Infected";
             this.queue.push(neighborId);
             stateChanged = true;
+            console.log(`SIR: ${neighborId} infected, added to queue`);
           } else {
             // Failed infection in SIR → Immune (Recovered/Removed)
             targetNode.state = "Immune";
             stateChanged = true;
+            console.log(`SIR: ${neighborId} became immune (recovered)`);
           }
         } else { // SI model
           if (success) {
             targetNode.state = "Infected";
             this.queue.push(neighborId);
             stateChanged = true;
+            console.log(`SI: ${neighborId} infected, added to queue`);
+          } else {
+            // Failed infection in SI → leave as Susceptible (no state change)
+            console.log(`SI: ${neighborId} remains susceptible (no state change)`);
           }
-          // Failed infection in SI → leave as Susceptible (no state change)
-          // stateChanged remains false
         }
 
         const newHistoryEntry = {
@@ -116,17 +131,12 @@ export class AutoPlaySimulator {
           history: [...prevState.history, newHistoryEntry]
         };
 
-        // Only update time series if state actually changed
-        if (stateChanged) {
-          const currentCounts = this.countNodeStates(updatedNodes);
-          this.setTimeSeries(prev => [...prev, { 
-            step: prev.length, 
-            counts: currentCounts 
-          }]);
-          console.log(`State changed for ${neighborId}, time series updated to step ${prev => prev.length}`);
-        } else {
-          console.log(`No state change for ${neighborId}, time series not updated`);
-        }
+        // Update time series after every attempt (regardless of state change)
+        const currentCounts = this.countNodeStates(updatedNodes);
+        this.setTimeSeries(prev => [...prev, { 
+          step: prev.length, 
+          counts: currentCounts 
+        }]);
 
         return newState;
       });
@@ -197,11 +207,22 @@ export class AutoPlaySimulator {
     
     for (const infectedNodeId of infectedNodes) {
       const neighbors = this.getOrthogonalNeighbors(infectedNodeId, gameState.gridSize);
-      const susceptibleNeighbors = neighbors.filter(
-        neighborId => gameState.nodes[neighborId]?.state === "Susceptible"
-      );
       
-      if (susceptibleNeighbors.length > 0) {
+      // Filter based on model type - same logic as processInfectedNode
+      let eligibleNeighbors: string[];
+      if (gameState.modelType === "SIR") {
+        // In SIR mode, only consider Susceptible neighbors (skip Immune/Recovered)
+        eligibleNeighbors = neighbors.filter(
+          neighborId => gameState.nodes[neighborId]?.state === "Susceptible"
+        );
+      } else {
+        // In SI mode, only consider Susceptible neighbors (skip VaccinatedSafe)
+        eligibleNeighbors = neighbors.filter(
+          neighborId => gameState.nodes[neighborId]?.state === "Susceptible"
+        );
+      }
+      
+      if (eligibleNeighbors.length > 0) {
         return true;
       }
     }
@@ -215,7 +236,7 @@ export class AutoPlaySimulator {
     this.isRunning = true;
     this.abortController = new AbortController();
     
-    console.log('Starting auto-play simulation');
+    console.log(`Starting auto-play simulation in ${gameState.modelType} mode`);
 
     // Find existing infected nodes or seed one
     let infectedNodes = this.findInfectedNodes(gameState);
@@ -249,7 +270,7 @@ export class AutoPlaySimulator {
           this.setState(currentState => {
             // Check if there are still susceptible neighbors that can be infected
             if (!this.hasInfectableSusceptibleNeighbors(currentState)) {
-              console.log('No more susceptible neighbors available for infection, stopping auto-play');
+              console.log(`No more eligible neighbors available for infection in ${currentState.modelType} mode, stopping auto-play`);
               this.queue = []; // Clear queue to stop processing
               resolve();
               return currentState;
