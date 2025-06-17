@@ -15,12 +15,11 @@ const StatePalette: React.FC<StatePaletteProps> = ({
       "VaccinatedSafe", 
       "VaccinatedFailed",
       "Infected",
-      "Immune",
-      "InfectionAttemptFailed"
+      "Immune"
     ];
 
-    if (modelType === "SIR") {
-      return [...baseStates, "Recovered"];
+    if (modelType === "SI") {
+      return [...baseStates, "InfectionAttemptFailed"];
     }
     
     return baseStates;
@@ -44,9 +43,8 @@ const StatePalette: React.FC<StatePaletteProps> = ({
       case "VaccinatedSafe": return "V";
       case "VaccinatedFailed": return "F";
       case "Infected": return "I";
-      case "Immune": return "M";
+      case "Immune": return "R"; // R for Recovered/Removed in SIR model
       case "InfectionAttemptFailed": return "F";
-      case "Recovered": return "R";
       default: return state.charAt(0);
     }
   };

@@ -5,8 +5,7 @@ export type NodeState =
   | "VaccinatedFailed"
   | "Infected"
   | "Immune"
-  | "InfectionAttemptFailed"
-  | "Recovered"; // New state for SIR model
+  | "InfectionAttemptFailed";
 
 // Define model types
 export type ModelType = "SIR" | "SI";

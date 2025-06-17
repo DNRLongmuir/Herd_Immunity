@@ -52,7 +52,6 @@ const countNodeStates = (nodes: Record<string, GridNode>): Record<NodeState, num
     Infected: 0,
     Immune: 0,
     InfectionAttemptFailed: 0,
-    Recovered: 0,
   };
   
   Object.values(nodes).forEach(node => {

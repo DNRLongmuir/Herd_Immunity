@@ -45,7 +45,6 @@ export class AutoPlaySimulator {
       Infected: 0,
       Immune: 0,
       InfectionAttemptFailed: 0,
-      Recovered: 0,
     };
     
     Object.values(nodes).forEach(node => {
@@ -78,21 +77,30 @@ export class AutoPlaySimulator {
       
       console.log(`Attempting infection from ${currentNodeId} to ${neighborId}: ${success ? 'SUCCESS' : 'FAILED'}`);
 
-      // Update state and time series in a single operation
+      // Update state based on model type and outcome
       this.setState(prevState => {
         const updatedNodes = { ...prevState.nodes };
+        const targetNode = updatedNodes[neighborId];
+        let stateChanged = false;
         
-        if (success) {
-          updatedNodes[neighborId].state = "Infected";
-          // Add successful infection to queue for future processing
-          this.queue.push(neighborId);
-        } else {
-          // Handle failed infection based on model type
-          if (prevState.modelType === "SIR") {
-            updatedNodes[neighborId].state = "Recovered";
+        if (prevState.modelType === "SIR") {
+          if (success) {
+            targetNode.state = "Infected";
+            this.queue.push(neighborId);
+            stateChanged = true;
           } else {
-            updatedNodes[neighborId].state = "InfectionAttemptFailed";
+            // Failed infection in SIR → Immune (Recovered/Removed)
+            targetNode.state = "Immune";
+            stateChanged = true;
           }
+        } else { // SI model
+          if (success) {
+            targetNode.state = "Infected";
+            this.queue.push(neighborId);
+            stateChanged = true;
+          }
+          // Failed infection in SI → leave as Susceptible (no state change)
+          // stateChanged remains false
         }
 
         const newHistoryEntry = {
@@ -108,12 +116,17 @@ export class AutoPlaySimulator {
           history: [...prevState.history, newHistoryEntry]
         };
 
-        // Update time series immediately after state change
-        const currentCounts = this.countNodeStates(updatedNodes);
-        this.setTimeSeries(prev => [...prev, { 
-          step: prev.length, 
-          counts: currentCounts 
-        }]);
+        // Only update time series if state actually changed
+        if (stateChanged) {
+          const currentCounts = this.countNodeStates(updatedNodes);
+          this.setTimeSeries(prev => [...prev, { 
+            step: prev.length, 
+            counts: currentCounts 
+          }]);
+          console.log(`State changed for ${neighborId}, time series updated to step ${prev => prev.length}`);
+        } else {
+          console.log(`No state change for ${neighborId}, time series not updated`);
+        }
 
         return newState;
       });
@@ -179,6 +192,23 @@ export class AutoPlaySimulator {
     return randomNode.id;
   }
 
+  private hasInfectableSusceptibleNeighbors(gameState: GameState): boolean {
+    const infectedNodes = this.findInfectedNodes(gameState);
+    
+    for (const infectedNodeId of infectedNodes) {
+      const neighbors = this.getOrthogonalNeighbors(infectedNodeId, gameState.gridSize);
+      const susceptibleNeighbors = neighbors.filter(
+        neighborId => gameState.nodes[neighborId]?.state === "Susceptible"
+      );
+      
+      if (susceptibleNeighbors.length > 0) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
   async start(gameState: GameState): Promise<void> {
     if (this.isRunning) return;
     
@@ -209,7 +239,7 @@ export class AutoPlaySimulator {
     console.log(`Initialized queue with ${this.queue.length} infected nodes`);
 
     try {
-      // Process queue until empty
+      // Process queue until empty or no more infections possible
       while (this.queue.length > 0 && this.isRunning) {
         const currentNodeId = this.queue.shift()!;
         console.log(`Processing queue item: ${currentNodeId}, remaining queue: ${this.queue.length}`);
@@ -217,6 +247,14 @@ export class AutoPlaySimulator {
         // Get current game state for processing
         await new Promise<void>((resolve) => {
           this.setState(currentState => {
+            // Check if there are still susceptible neighbors that can be infected
+            if (!this.hasInfectableSusceptibleNeighbors(currentState)) {
+              console.log('No more susceptible neighbors available for infection, stopping auto-play');
+              this.queue = []; // Clear queue to stop processing
+              resolve();
+              return currentState;
+            }
+            
             this.processInfectedNode(currentNodeId, currentState).then(resolve);
             return currentState;
           });

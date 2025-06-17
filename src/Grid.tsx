@@ -52,21 +52,19 @@ const Grid: React.FC<GridProps> = ({
         if (vaccinationMode && targetNode.state === "VaccinatedSafe") {
           targetNode.state = "VaccinatedFailed";
         } else if (targetNode.state !== "Immune" && 
-                  targetNode.state !== "VaccinatedSafe" &&
-                  targetNode.state !== "Recovered") { // Recovered nodes can't be infected in SIR
+                  targetNode.state !== "VaccinatedSafe") {
           targetNode.state = "Infected";
         }
       } else {
         // Handle failed infection based on model type
-        if (state.modelType === "SIR") {
-          // In SIR model, failed infection leads to recovery
+        if (prev.modelType === "SIR") {
+          // In SIR model, failed infection leads to immunity (recovered/removed)
           if (targetNode.state !== "Immune" && 
-              targetNode.state !== "VaccinatedSafe" &&
-              targetNode.state !== "Recovered") {
-            targetNode.state = "Recovered";
+              targetNode.state !== "VaccinatedSafe") {
+            targetNode.state = "Immune";
           }
         } else {
-          // In SI model, failed infection leaves node susceptible or marks as failed attempt
+          // In SI model, failed infection can mark as failed attempt or leave susceptible
           if (targetNode.state !== "Immune" && 
               targetNode.state !== "VaccinatedSafe") {
             targetNode.state = "InfectionAttemptFailed";
@@ -97,9 +95,8 @@ const Grid: React.FC<GridProps> = ({
       case "VaccinatedSafe": return "V";
       case "VaccinatedFailed": return "F";
       case "Infected": return "I";
-      case "Immune": return "M";
+      case "Immune": return "R"; // R for Recovered/Removed in SIR model
       case "InfectionAttemptFailed": return "F";
-      case "Recovered": return "R";
       default: return state.charAt(0).toUpperCase();
     }
   };
