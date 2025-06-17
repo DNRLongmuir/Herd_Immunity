@@ -245,7 +245,7 @@ export class AutoPlaySimulator {
         console.log(`Processing queue item: ${currentNodeId}, remaining queue: ${this.queue.length}`);
         
         // Get current game state for processing
-        await new Promise<void>((resolve) => {
+        await new Promise<void>((resolve, reject) => {
           this.setState(currentState => {
             // Check if there are still susceptible neighbors that can be infected
             if (!this.hasInfectableSusceptibleNeighbors(currentState)) {
@@ -255,7 +255,9 @@ export class AutoPlaySimulator {
               return currentState;
             }
             
-            this.processInfectedNode(currentNodeId, currentState).then(resolve);
+            this.processInfectedNode(currentNodeId, currentState)
+              .then(resolve)
+              .catch(reject);
             return currentState;
           });
         });
