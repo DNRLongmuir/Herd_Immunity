@@ -29,16 +29,15 @@ const Grid: React.FC<GridProps> = ({
           setPendingSource(nodeId);
         }
       } else {
-        // Check if target is valid based on model type
-        if (state.modelType === "SI" && node.state === "VaccinatedSafe") {
-          // In SI mode, show warning for VaccinatedSafe targets
+        // Check if target is VaccinatedSafe - always block unless vaccination mode is on
+        if (node.state === "VaccinatedSafe" && !vaccinationMode) {
           setShowVaccinatedWarning(true);
           setPendingSource(null); // Clear pending source
           return;
         }
         
+        // In SIR mode, silently ignore Immune (Recovered) targets
         if (state.modelType === "SIR" && node.state === "Immune") {
-          // In SIR mode, silently ignore Immune (Recovered) targets
           setPendingSource(null); // Clear pending source
           return;
         }
