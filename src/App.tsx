@@ -76,6 +76,13 @@ export default function App() {
   const [showSessionDialog, setShowSessionDialog] = useState<boolean>(true);
   const [showEndGameDialog, setShowEndGameDialog] = useState<boolean>(false);
   const [autoPlayRunning, setAutoPlayRunning] = useState<boolean>(false);
+  
+  // New state hooks for seeding system
+  const [seedAttemptsRemaining, setSeedAttemptsRemaining] = useState<number>(3);
+  const [isSeeded, setIsSeeded] = useState<boolean>(false);
+  const [showSeedDialog, setShowSeedDialog] = useState<boolean>(false);
+  const [seedDialogMessage, setSeedDialogMessage] = useState<string>('');
+  
   const gridRef = useRef<HTMLDivElement>(null);
   const autoPlaySimulatorRef = useRef<AutoPlaySimulator | null>(null);
 
@@ -123,6 +130,9 @@ export default function App() {
     setSessionDate(formatDate(new Date()));
     setGameNumber(1);
     setTimeSeries([]);
+    // Reset seeding state
+    setSeedAttemptsRemaining(3);
+    setIsSeeded(false);
     setShowSessionDialog(false);
   }
 
@@ -158,6 +168,9 @@ export default function App() {
       // Increment game number and clear time series
       setGameNumber(prev => prev + 1);
       setTimeSeries([]);
+      // Reset seeding state for new game
+      setSeedAttemptsRemaining(3);
+      setIsSeeded(false);
     }
     setShowEndGameDialog(false);
   }
@@ -178,6 +191,9 @@ export default function App() {
     }));
     setPendingSource(null);
     setTimeSeries([]);
+    // Reset seeding state
+    setSeedAttemptsRemaining(3);
+    setIsSeeded(false);
   }
 
   function handleModelTypeChange(newModelType: ModelType) {
@@ -196,6 +212,9 @@ export default function App() {
       setPendingSource(null);
       setTimeSeries([]);
       setGameNumber(prev => prev + 1);
+      // Reset seeding state for new game
+      setSeedAttemptsRemaining(3);
+      setIsSeeded(false);
       
       console.log(`Model type changed from ${state.modelType} to ${newModelType}, grid reset, game number incremented to ${gameNumber + 1}`);
     } else {
@@ -256,36 +275,76 @@ export default function App() {
   }
 
   function seedWeightedInfection() {
-    const { rows, cols } = state.gridSize;
-    const edgeIds: string[] = [];
-    const interiorIds: string[] = [];
-    Object.values(state.nodes).forEach(node => {
-      if (
-        node.row === 0 ||
-        node.row === rows - 1 ||
-        node.col === 0 ||
-        node.col === cols - 1
-      ) {
-        edgeIds.push(node.id);
+    // Build pool of all node IDs with weights
+    const nodeIds = Object.keys(state.nodes);
+    const weights: number[] = [];
+    
+    nodeIds.forEach(nodeId => {
+      const node = state.nodes[nodeId];
+      if (node.state !== "VaccinatedSafe") {
+        weights.push(1.0);
       } else {
-        interiorIds.push(node.id);
+        // VaccinatedSafe weight based on attempts remaining
+        if (seedAttemptsRemaining === 3) {
+          weights.push(1.0);
+        } else if (seedAttemptsRemaining === 2) {
+          weights.push(0.5);
+        } else if (seedAttemptsRemaining === 1) {
+          weights.push(0.2);
+        } else {
+          weights.push(0.0);
+        }
       }
     });
-    const pickFromInterior = Math.random() < 0.6;
-    const pool = pickFromInterior ? interiorIds : edgeIds.length > 0 ? edgeIds : interiorIds;
-    if (pool.length === 0) return;
-    const chosen = pool[Math.floor(Math.random() * pool.length)];
-    setState(prev => {
-      const updatedNodes = { ...prev.nodes };
-      updatedNodes[chosen].state = "Infected";
-      const newHistoryEntry = { from: null, to: chosen, success: true, timestamp: Date.now() };
-      return {
-        ...prev,
-        nodes: updatedNodes,
-        history: [...prev.history, newHistoryEntry],
-      };
-    });
-    setPendingSource(null);
+
+    // Weighted random selection
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    let random = Math.random() * totalWeight;
+    let chosenIndex = 0;
+    
+    for (let i = 0; i < weights.length; i++) {
+      random -= weights[i];
+      if (random <= 0) {
+        chosenIndex = i;
+        break;
+      }
+    }
+    
+    const chosenNodeId = nodeIds[chosenIndex];
+    const chosenNode = state.nodes[chosenNodeId];
+
+    // Handle the chosen node
+    if (chosenNode.state === "VaccinatedSafe") {
+      // Decrement attempts and show popup
+      const newAttemptsRemaining = seedAttemptsRemaining - 1;
+      setSeedAttemptsRemaining(newAttemptsRemaining);
+      
+      if (newAttemptsRemaining === 0) {
+        setSeedDialogMessage("Game Over! The community is safe! Well done!");
+      } else {
+        setSeedDialogMessage(`Infection attempt unsuccessful — ${newAttemptsRemaining}/3 tries remaining.`);
+      }
+      
+      setShowSeedDialog(true);
+      // Do not change any node state or history
+      return;
+    } else {
+      // Successful seeding - infect the chosen node
+      setState(prev => {
+        const updatedNodes = { ...prev.nodes };
+        updatedNodes[chosenNodeId].state = "Infected";
+        const newHistoryEntry = { from: null, to: chosenNodeId, success: true, timestamp: Date.now() };
+        return {
+          ...prev,
+          nodes: updatedNodes,
+          history: [...prev.history, newHistoryEntry],
+        };
+      });
+      
+      // Mark as seeded and disable further seeding
+      setIsSeeded(true);
+      setPendingSource(null);
+    }
   }
 
   function handleAutoPlay() {
@@ -306,6 +365,7 @@ export default function App() {
 
   const isControlsDisabled = autoPlayRunning;
   const isModelTypeDisabled = infectionMode || autoPlayRunning;
+  const isSeedButtonDisabled = isControlsDisabled || isSeeded || seedAttemptsRemaining === 0;
 
   if (showSessionDialog) {
     return <SessionDialog onSubmit={handleSessionSubmit} />;
@@ -416,14 +476,21 @@ export default function App() {
           </button>
           <button 
             onClick={seedWeightedInfection} 
-            disabled={isControlsDisabled}
+            disabled={isSeedButtonDisabled}
             className={`px-3 py-2 rounded transition-colors ${
-              isControlsDisabled 
+              isSeedButtonDisabled
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                 : 'bg-red-500 text-white hover:bg-red-600'
             }`}
+            title={
+              isSeeded 
+                ? 'Already seeded - only one seed per game' 
+                : seedAttemptsRemaining === 0 
+                ? 'No seed attempts remaining' 
+                : `Seed Infection (${seedAttemptsRemaining}/3 attempts remaining)`
+            }
           >
-            Seed Infection
+            Seed Infection {!isSeeded && `(${seedAttemptsRemaining}/3)`}
           </button>
           <button 
             onClick={handleAutoPlay}
@@ -526,6 +593,23 @@ export default function App() {
             onConfirm={() => handleEndGameConfirm(true)}
             onCancel={() => handleEndGameConfirm(false)}
           />
+        )}
+
+        {/* Seed Attempt Dialog */}
+        {showSeedDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <p className="text-lg mb-6">{seedDialogMessage}</p>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowSeedDialog(false)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
