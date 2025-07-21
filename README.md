@@ -14,12 +14,6 @@ An interactive visualization tool for understanding how diseases spread through 
 - Time series data visualization
 - Export capabilities for data analysis
 
-## 🚀 Quick Start (For Everyone)
-
-1. Open this link in your browser: [Herd Immunity Simulator](https://bolt.new)
-2. Click the "Run" button
-3. Start experimenting!
-
 ## 📋 Detailed Usage Guide
 
 ### Getting Started
