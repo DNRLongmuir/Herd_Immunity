@@ -61,13 +61,17 @@ const Grid: React.FC<GridProps> = ({
     setState(prev => {
       const updatedNodes = { ...prev.nodes };
       const targetNode = updatedNodes[pendingInfection.to];
+     const originalState = targetNode.state;
+     let stateChanged = false;
       
       if (success) {
         if (vaccinationMode && targetNode.state === "VaccinatedSafe") {
           targetNode.state = "VaccinatedFailed";
+         stateChanged = true;
         } else if (targetNode.state !== "Immune" && 
                   targetNode.state !== "VaccinatedSafe") {
           targetNode.state = "Infected";
+         stateChanged = true;
         }
       } else {
         // Handle failed infection based on model type
@@ -76,17 +80,19 @@ const Grid: React.FC<GridProps> = ({
           if (targetNode.state !== "Immune" && 
               targetNode.state !== "VaccinatedSafe") {
             targetNode.state = "Immune";
+           stateChanged = true;
           }
         } else {
           // In SI model, failed infection can mark as failed attempt or leave susceptible
           if (targetNode.state !== "Immune" && 
               targetNode.state !== "VaccinatedSafe") {
             targetNode.state = "InfectionAttemptFailed";
+           stateChanged = true;
           }
         }
       }
 
-      return {
+      const newState = {
         ...prev,
         nodes: updatedNodes,
         history: [...prev.history, {
@@ -96,6 +102,17 @@ const Grid: React.FC<GridProps> = ({
           timestamp: Date.now()
         }]
       };
+
+      // Only update time series if state actually changed
+      if (stateChanged) {
+        const currentCounts = countNodeStates(updatedNodes);
+        setTimeSeries(prevTS => [...prevTS, { 
+          step: prevTS.length, 
+          counts: currentCounts 
+        }]);
+      }
+
+      return newState;
     });
 
     setPendingSource(null);

@@ -333,12 +333,22 @@ export default function App() {
       setState(prev => {
         const updatedNodes = { ...prev.nodes };
         updatedNodes[chosenNodeId].state = "Infected";
+        
         const newHistoryEntry = { from: null, to: chosenNodeId, success: true, timestamp: Date.now() };
-        return {
+        const newState = {
           ...prev,
           nodes: updatedNodes,
           history: [...prev.history, newHistoryEntry],
         };
+
+        // Update time series for successful seeding (state changed from something to Infected)
+        const currentCounts = countNodeStates(updatedNodes);
+        setTimeSeries(prev => [...prev, { 
+          step: prev.length, 
+          counts: currentCounts 
+        }]);
+
+        return newState;
       });
       
       // Mark as seeded and disable further seeding

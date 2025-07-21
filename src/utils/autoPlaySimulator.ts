@@ -103,22 +103,28 @@ export class AutoPlaySimulator {
       this.setState(prevState => {
         const updatedNodes = { ...prevState.nodes };
         const targetNode = updatedNodes[neighborId];
+        const originalState = targetNode.state;
+        let stateChanged = false;
 
         if (prevState.modelType === "SIR") {
           // SIR: failure → R (Immune), success → I
           if (success) {
             targetNode.state = "Infected";
+            stateChanged = true;
             this.queue.push(neighborId);
           } else {
             targetNode.state = "Immune";
+            stateChanged = true;
           }
         } else {
           // SI: failure → stay Susceptible, success → I
           if (success) {
             targetNode.state = "Infected";
+            stateChanged = true;
             this.queue.push(neighborId);
           }
           // On failure in SI mode, leave as Susceptible (no change)
+          // stateChanged remains false for SI failures
         }
 
         const newHistoryEntry = {
@@ -134,12 +140,14 @@ export class AutoPlaySimulator {
           history: [...prevState.history, newHistoryEntry],
         };
 
-        // Update the time series snapshot
-        const currentCounts = this.countNodeStates(updatedNodes);
-        this.setTimeSeries(ts => [
-          ...ts,
-          { step: ts.length, counts: currentCounts },
-        ]);
+        // Only update time series if state actually changed
+        if (stateChanged) {
+          const currentCounts = this.countNodeStates(updatedNodes);
+          this.setTimeSeries(ts => [
+            ...ts,
+            { step: ts.length, counts: currentCounts },
+          ]);
+        }
 
         return newState;
       });
