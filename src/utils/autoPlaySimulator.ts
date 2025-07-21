@@ -140,34 +140,16 @@ export class AutoPlaySimulator {
           history: [...prevState.history, newHistoryEntry],
         };
 
+        // Update time series if state actually changed
+        if (stateChanged) {
+          const currentCounts = this.countNodeStates(updatedNodes);
+          this.setTimeSeries(ts => [
+            ...ts,
+            { step: ts.length, counts: currentCounts },
+          ]);
+        }
         return newState;
       });
-      
-      // Update time series outside setState if state actually changed
-      if (stateChanged) {
-        // Calculate what the new state will be
-        const futureNodes = { ...gameState.nodes };
-        const futureTargetNode = futureNodes[neighborId];
-        
-        if (gameState.modelType === "SIR") {
-          if (success) {
-            futureTargetNode.state = "Infected";
-          } else {
-            futureTargetNode.state = "Immune";
-          }
-        } else {
-          if (success) {
-            futureTargetNode.state = "Infected";
-          }
-          // On failure in SI mode, leave as Susceptible (no change)
-        }
-        
-        const currentCounts = this.countNodeStates(futureNodes);
-        this.setTimeSeries(ts => [
-          ...ts,
-          { step: ts.length, counts: currentCounts },
-        ]);
-      }
     }
   }
 
