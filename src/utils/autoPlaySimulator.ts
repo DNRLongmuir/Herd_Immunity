@@ -183,6 +183,7 @@ export class AutoPlaySimulator {
     const randomNode = susceptibleNodes[Math.floor(Math.random() * susceptibleNodes.length)];
     
     this.setState(prevState => {
+      const oldNodes = prevState.nodes;
       const updatedNodes = { ...prevState.nodes };
       updatedNodes[randomNode.id].state = "Infected";
       
@@ -199,12 +200,8 @@ export class AutoPlaySimulator {
         history: [...prevState.history, newHistoryEntry]
       };
 
-      // Update time series for seeded infection
-      const currentCounts = this.countNodeStates(updatedNodes);
-      this.setTimeSeries(prev => [...prev, { 
-        step: prev.length, 
-        counts: currentCounts 
-      }]);
+      // Update time series if state changed
+      this.updateTimeSeriesIfChanged(updatedNodes, oldNodes);
 
       return newState;
     });

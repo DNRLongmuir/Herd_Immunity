@@ -336,6 +336,7 @@ export default function App() {
     } else {
       // Successful seeding - infect the chosen node
       setState(prev => {
+        const oldNodes = prev.nodes;
         const updatedNodes = { ...prev.nodes };
         updatedNodes[chosenNodeId].state = "Infected";
         
@@ -346,12 +347,8 @@ export default function App() {
           history: [...prev.history, newHistoryEntry],
         };
 
-        // Update time series for successful seeding (state changed from something to Infected)
-        const currentCounts = countNodeStates(updatedNodes);
-        setTimeSeries(prev => [...prev, { 
-          step: prev.length, 
-          counts: currentCounts 
-        }]);
+        // Update time series if state changed
+        updateTimeSeriesIfChanged(updatedNodes, oldNodes);
 
         return newState;
       });

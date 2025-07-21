@@ -12,29 +12,12 @@ const Grid: React.FC<GridProps> = ({
   pendingSource,
   setPendingSource,
   disabled = false,
-  setTimeSeries
+  updateTimeSeriesIfChanged
 }) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showVaccinatedWarning, setShowVaccinatedWarning] = useState(false);
   const [pendingInfection, setPendingInfection] = useState<{ from: string; to: string } | null>(null);
   
-  // Helper function to count node states
-  const countNodeStates = (nodes: Record<string, GridNode>): Record<NodeState, number> => {
-    const counts: Record<NodeState, number> = {
-      Susceptible: 0,
-      VaccinatedSafe: 0,
-      VaccinatedFailed: 0,
-      Infected: 0,
-      Immune: 0,
-      InfectionAttemptFailed: 0,
-    };
-    
-    Object.values(nodes).forEach(node => {
-      counts[node.state]++;
-    });
-    
-    return counts;
-  };
 
   const handleNodeClick = (nodeId: string) => {
     if (disabled) return;
@@ -67,8 +50,13 @@ const Grid: React.FC<GridProps> = ({
       }
     } else if (selectedState !== null) {
       setState(prev => {
+        const oldNodes = prev.nodes;
         const updatedNodes = { ...prev.nodes };
         updatedNodes[nodeId].state = selectedState;
+        
+        // Update time series if state changed
+        updateTimeSeriesIfChanged(updatedNodes, oldNodes);
+        
         return { ...prev, nodes: updatedNodes };
       });
     }
@@ -78,19 +66,16 @@ const Grid: React.FC<GridProps> = ({
     if (!pendingInfection) return;
 
     setState(prev => {
+      const oldNodes = prev.nodes;
       const updatedNodes = { ...prev.nodes };
       const targetNode = updatedNodes[pendingInfection.to];
-      const originalState = targetNode.state;
-      let stateChanged = false;
       
       if (success) {
         if (vaccinationMode && targetNode.state === "VaccinatedSafe") {
           targetNode.state = "VaccinatedFailed";
-          stateChanged = true;
         } else if (targetNode.state !== "Immune" && 
                   targetNode.state !== "VaccinatedSafe") {
           targetNode.state = "Infected";
-          stateChanged = true;
         }
       } else {
         // Handle failed infection based on model type
@@ -99,26 +84,19 @@ const Grid: React.FC<GridProps> = ({
           if (targetNode.state !== "Immune" && 
               targetNode.state !== "VaccinatedSafe") {
             targetNode.state = "Immune";
-            stateChanged = true;
           }
         } else {
           // In SI model, failed infection can mark as failed attempt or leave susceptible
           if (targetNode.state !== "Immune" && 
               targetNode.state !== "VaccinatedSafe") {
             targetNode.state = "InfectionAttemptFailed";
-            stateChanged = true;
           }
         }
       }
 
-      // Update time series if state actually changed
-      if (stateChanged) {
-        const currentCounts = countNodeStates(updatedNodes);
-        setTimeSeries(prevTS => [...prevTS, { 
-          step: prevTS.length, 
-          counts: currentCounts 
-        }]);
-      }
+      // Update time series if state changed
+      updateTimeSeriesIfChanged(updatedNodes, oldNodes);
+      
       const newState: GameState = {
         ...prev,
         nodes: updatedNodes,

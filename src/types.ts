@@ -74,7 +74,7 @@ export interface GridProps {
   pendingSource: string | null;
   setPendingSource: (id: string | null) => void;
   disabled?: boolean;
-  setTimeSeries: React.Dispatch<React.SetStateAction<Array<{ step: number; counts: Record<NodeState, number> }>>>;
+  updateTimeSeriesIfChanged: (newNodes: Record<string, GridNode>, oldNodes: Record<string, GridNode>) => void;
 }
 
 // Props for InfectionArrows component
