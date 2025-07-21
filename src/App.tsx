@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { toPng } from 'html-to-image';
 import { GameState, GridNode, NodeState, SessionData, ModelType } from './types';
 import { AutoPlaySimulator } from './utils/autoPlaySimulator';
+import { exportGridToCanvas } from './utils/canvasExport';
 import Grid from './Grid';
 import InfectionArrows from './InfectionArrows';
 import StatePalette from './StatePalette';
@@ -269,29 +270,7 @@ export default function App() {
   }
 
   function downloadGridImage() {
-    const node = document.getElementById("grid-container");
-    if (!node) return;
-    
-    // Calculate exact dimensions needed
-    const totalWidth = state.gridSize.cols * 64 + (state.gridSize.cols - 1) * 4 + 16;
-    const totalHeight = state.gridSize.rows * 64 + (state.gridSize.rows - 1) * 4 + 16;
-    
-    toPng(node, {
-      backgroundColor: '#ffffff',
-      width: totalWidth,
-      height: totalHeight,
-      style: {
-        transform: 'scale(1)',
-        transformOrigin: 'top left',
-        width: `${totalWidth}px`,
-        height: `${totalHeight}px`,
-      }
-    }).then((dataUrl: string) => {
-      const a = document.createElement("a");
-      a.href = dataUrl;
-      a.download = `grid_snapshot_game${gameNumber}.png`;
-      a.click();
-    });
+    exportGridToCanvas(state, gameNumber);
   }
 
   function seedWeightedInfection() {
