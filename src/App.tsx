@@ -568,8 +568,8 @@ export default function App() {
           ref={gridRef}
           className="relative mx-auto"
           style={{
-            width: `${state.gridSize.cols * 64}px`,
-            height: `${state.gridSize.rows * 64}px`,
+            width: `${state.gridSize.cols * 64 + (state.gridSize.cols - 1) * 4}px`,
+            height: `${state.gridSize.rows * 64 + (state.gridSize.rows - 1) * 4}px`,
           }}
         >
           <Grid
