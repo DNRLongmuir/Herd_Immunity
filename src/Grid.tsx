@@ -134,7 +134,10 @@ const Grid: React.FC<GridProps> = ({
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${state.gridSize.cols}, 64px)`,
+          gridTemplateRows: `repeat(${state.gridSize.rows}, 64px)`,
           gap: '4px',
+          width: 'fit-content',
+          height: 'fit-content',
         }}
       >
         {Object.values(state.nodes).map(node => (

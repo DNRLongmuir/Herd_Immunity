@@ -271,7 +271,17 @@ export default function App() {
   function downloadGridImage() {
     const node = document.getElementById("grid-container");
     if (!node) return;
-    toPng(node).then((dataUrl: string) => {
+    
+    // Add some padding and ensure full capture
+    toPng(node, {
+      backgroundColor: '#ffffff',
+      width: node.scrollWidth,
+      height: node.scrollHeight,
+      style: {
+        transform: 'scale(1)',
+        transformOrigin: 'top left',
+      }
+    }).then((dataUrl: string) => {
       const a = document.createElement("a");
       a.href = dataUrl;
       a.download = `grid_snapshot_game${gameNumber}.png`;
@@ -570,6 +580,8 @@ export default function App() {
           style={{
             width: `${state.gridSize.cols * 64 + (state.gridSize.cols - 1) * 4}px`,
             height: `${state.gridSize.rows * 64 + (state.gridSize.rows - 1) * 4}px`,
+            overflow: 'visible',
+            padding: '8px',
           }}
         >
           <Grid
@@ -581,6 +593,7 @@ export default function App() {
             pendingSource={pendingSource}
             setPendingSource={setPendingSource}
             disabled={isControlsDisabled}
+            updateTimeSeriesIfChanged={updateTimeSeriesIfChanged}
           />
           <InfectionArrows state={state} gridRef={gridRef} />
         </div>
