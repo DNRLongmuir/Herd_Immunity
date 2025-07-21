@@ -1,6 +1,7 @@
 @@ .. @@
  export const exportGridToCanvas = (state: GameState, gameNumber: number): void => {
    const { gridSize, nodes } = state;
+ }
 -  const cellSize = 80;
 +  const cellSize = 64;
    const gap = 4;
