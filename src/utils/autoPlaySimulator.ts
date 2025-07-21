@@ -127,6 +127,14 @@ export class AutoPlaySimulator {
           // stateChanged remains false for SI failures
         }
 
+        // Update time series if state actually changed
+        if (stateChanged) {
+          const currentCounts = this.countNodeStates(updatedNodes);
+          this.setTimeSeries(ts => [
+            ...ts,
+            { step: ts.length, counts: currentCounts },
+          ]);
+        }
         const newHistoryEntry = {
           from: currentNodeId,
           to: neighborId,
@@ -140,14 +148,6 @@ export class AutoPlaySimulator {
           history: [...prevState.history, newHistoryEntry],
         };
 
-        // Update time series if state actually changed
-        if (stateChanged) {
-          const currentCounts = this.countNodeStates(updatedNodes);
-          this.setTimeSeries(ts => [
-            ...ts,
-            { step: ts.length, counts: currentCounts },
-          ]);
-        }
         return newState;
       });
     }
