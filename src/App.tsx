@@ -272,14 +272,19 @@ export default function App() {
     const node = document.getElementById("grid-container");
     if (!node) return;
     
-    // Add some padding and ensure full capture
+    // Calculate exact dimensions needed
+    const totalWidth = state.gridSize.cols * 64 + (state.gridSize.cols - 1) * 4 + 16;
+    const totalHeight = state.gridSize.rows * 64 + (state.gridSize.rows - 1) * 4 + 16;
+    
     toPng(node, {
       backgroundColor: '#ffffff',
-      width: node.scrollWidth,
-      height: node.scrollHeight,
+      width: totalWidth,
+      height: totalHeight,
       style: {
         transform: 'scale(1)',
         transformOrigin: 'top left',
+        width: `${totalWidth}px`,
+        height: `${totalHeight}px`,
       }
     }).then((dataUrl: string) => {
       const a = document.createElement("a");
@@ -578,8 +583,8 @@ export default function App() {
           ref={gridRef}
           className="relative mx-auto"
           style={{
-            width: `${state.gridSize.cols * 64 + (state.gridSize.cols - 1) * 4}px`,
-            height: `${state.gridSize.rows * 64 + (state.gridSize.rows - 1) * 4}px`,
+            width: `${state.gridSize.cols * 64 + (state.gridSize.cols - 1) * 4 + 16}px`,
+            height: `${state.gridSize.rows * 64 + (state.gridSize.rows - 1) * 4 + 16}px`,
             overflow: 'visible',
             padding: '8px',
           }}
