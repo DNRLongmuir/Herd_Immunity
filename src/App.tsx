@@ -399,8 +399,8 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6">
+    <div className="min-h-screen bg-gray-100 p-8 overflow-x-auto">
+      <div className="min-w-fit mx-auto bg-white rounded-lg shadow-lg p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">{sessionName} — {sessionDate}</h2>
           <div className="flex items-center gap-4">
@@ -581,11 +581,12 @@ export default function App() {
         <div
           id="grid-container"
           ref={gridRef}
-          className="relative mx-auto"
+          className="relative mx-auto overflow-visible"
           style={{
             width: `${state.gridSize.cols * 64 + (state.gridSize.cols - 1) * 4 + 16}px`,
             height: `${state.gridSize.rows * 64 + (state.gridSize.rows - 1) * 4 + 16}px`,
-            overflow: 'visible',
+            minWidth: `${state.gridSize.cols * 64 + (state.gridSize.cols - 1) * 4 + 16}px`,
+            minHeight: `${state.gridSize.rows * 64 + (state.gridSize.rows - 1) * 4 + 16}px`,
             padding: '8px',
           }}
         >

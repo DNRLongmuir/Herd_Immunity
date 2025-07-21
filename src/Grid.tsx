@@ -136,8 +136,10 @@ const Grid: React.FC<GridProps> = ({
           gridTemplateColumns: `repeat(${state.gridSize.cols}, 64px)`,
           gridTemplateRows: `repeat(${state.gridSize.rows}, 64px)`,
           gap: '4px',
-          width: 'fit-content',
-          height: 'fit-content',
+          width: `${state.gridSize.cols * 64 + (state.gridSize.cols - 1) * 4}px`,
+          height: `${state.gridSize.rows * 64 + (state.gridSize.rows - 1) * 4}px`,
+          minWidth: `${state.gridSize.cols * 64 + (state.gridSize.cols - 1) * 4}px`,
+          minHeight: `${state.gridSize.rows * 64 + (state.gridSize.rows - 1) * 4}px`,
         }}
       >
         {Object.values(state.nodes).map(node => (
