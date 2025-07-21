@@ -86,11 +86,26 @@ export default function App() {
   const gridRef = useRef<HTMLDivElement>(null);
   const autoPlaySimulatorRef = useRef<AutoPlaySimulator | null>(null);
 
+  // Centralized function to update time series when state changes
+  const updateTimeSeriesIfChanged = (newNodes: Record<string, GridNode>, oldNodes: Record<string, GridNode>) => {
+    // Check if any node actually changed state
+    const hasStateChange = Object.keys(newNodes).some(nodeId => 
+      newNodes[nodeId].state !== oldNodes[nodeId].state
+    );
+    
+    if (hasStateChange) {
+      const currentCounts = countNodeStates(newNodes);
+      setTimeSeries(prev => [...prev, { 
+        step: prev.length, 
+        counts: currentCounts 
+      }]);
+    }
+  };
   // Initialize auto-play simulator
   useEffect(() => {
     autoPlaySimulatorRef.current = new AutoPlaySimulator(
       setState,
-      setTimeSeries,
+      updateTimeSeriesIfChanged,
       () => {
         setAutoPlayRunning(false);
         console.log('Auto-play complete');
@@ -102,7 +117,7 @@ export default function App() {
         autoPlaySimulatorRef.current.stop();
       }
     };
-  }, []);
+  }, [timeSeries]);
 
   // Initialize time series when infection mode is enabled
   useEffect(() => {
@@ -114,7 +129,6 @@ export default function App() {
     }
   }, [infectionMode]);
 
-  // Update time series when state changes during infection mode
 
   function handleSessionSubmit(name: string) {
     setSessionName(name);
