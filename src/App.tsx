@@ -270,7 +270,30 @@ export default function App() {
   }
 
   function downloadGridImage() {
-    exportGridToCanvas(state, gameNumber);
+    const captureElement = document.getElementById('capture-grid');
+    if (!captureElement) {
+      console.error('Capture element not found');
+      return;
+    }
+
+    toPng(captureElement, {
+      backgroundColor: '#ffffff',
+      width: captureElement.scrollWidth,
+      height: captureElement.scrollHeight,
+      style: {
+        transform: 'scale(1)',
+        transformOrigin: 'top left',
+      }
+    })
+      .then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = `grid_snapshot_game${gameNumber}.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((error) => {
+        console.error('Error capturing image:', error);
+      });
   }
 
   function seedWeightedInfection() {
@@ -558,15 +581,13 @@ export default function App() {
 
         {/* Grid + SVG overlay container */}
         <div
-          id="grid-container"
+          id="capture-grid"
           ref={gridRef}
-          className="relative mx-auto overflow-visible"
+          className="relative mx-auto"
           style={{
-            width: `${state.gridSize.cols * 64 + (state.gridSize.cols - 1) * 4 + 16}px`,
-            height: `${state.gridSize.rows * 64 + (state.gridSize.rows - 1) * 4 + 16}px`,
-            minWidth: `${state.gridSize.cols * 64 + (state.gridSize.cols - 1) * 4 + 16}px`,
-            minHeight: `${state.gridSize.rows * 64 + (state.gridSize.rows - 1) * 4 + 16}px`,
-            padding: '8px',
+            display: 'inline-block',
+            padding: '16px',
+            backgroundColor: '#ffffff',
           }}
         >
           <Grid
