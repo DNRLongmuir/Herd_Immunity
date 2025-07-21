@@ -581,27 +581,31 @@ export default function App() {
 
         {/* Grid + SVG overlay container */}
         <div
-          id="capture-grid"
-          ref={gridRef}
-          className="relative mx-auto"
-          style={{
-            display: 'inline-block',
-            padding: '16px',
-            backgroundColor: '#ffffff',
-          }}
+          className="flex justify-center"
         >
-          <Grid
-            state={state}
-            setState={setState}
-            selectedState={selectedState}
-            infectionMode={infectionMode}
-            vaccinationMode={vaccinationMode}
-            pendingSource={pendingSource}
-            setPendingSource={setPendingSource}
-            disabled={isControlsDisabled}
-            updateTimeSeriesIfChanged={updateTimeSeriesIfChanged}
-          />
-          <InfectionArrows state={state} gridRef={gridRef} />
+          <div
+            id="capture-grid"
+            ref={gridRef}
+            className="relative"
+            style={{
+              display: 'inline-block',
+              padding: '16px',
+              backgroundColor: '#ffffff',
+            }}
+          >
+            <Grid
+              state={state}
+              setState={setState}
+              selectedState={selectedState}
+              infectionMode={infectionMode}
+              vaccinationMode={vaccinationMode}
+              pendingSource={pendingSource}
+              setPendingSource={setPendingSource}
+              disabled={isControlsDisabled}
+              updateTimeSeriesIfChanged={updateTimeSeriesIfChanged}
+            />
+            <InfectionArrows state={state} gridRef={gridRef} />
+          </div>
         </div>
 
         {/* Time Series Toggle */}
