@@ -115,15 +115,6 @@ export default function App() {
   }, [infectionMode]);
 
   // Update time series when state changes during infection mode
-  useEffect(() => {
-    if (infectionMode && state.history.length > 0) {
-      const currentCounts = countNodeStates(state.nodes);
-      setTimeSeries(prev => [...prev, { 
-        step: prev.length, 
-        counts: currentCounts 
-      }]);
-    }
-  }, [state.history.length, infectionMode]);
 
   function handleSessionSubmit(name: string) {
     setSessionName(name);

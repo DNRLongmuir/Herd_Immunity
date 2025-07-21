@@ -16,6 +16,24 @@ const Grid: React.FC<GridProps> = ({
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showVaccinatedWarning, setShowVaccinatedWarning] = useState(false);
   const [pendingInfection, setPendingInfection] = useState<{ from: string; to: string } | null>(null);
+  
+  // Helper function to count node states
+  const countNodeStates = (nodes: Record<string, GridNode>): Record<NodeState, number> => {
+    const counts: Record<NodeState, number> = {
+      Susceptible: 0,
+      VaccinatedSafe: 0,
+      VaccinatedFailed: 0,
+      Infected: 0,
+      Immune: 0,
+      InfectionAttemptFailed: 0,
+    };
+    
+    Object.values(nodes).forEach(node => {
+      counts[node.state]++;
+    });
+    
+    return counts;
+  };
 
   const handleNodeClick = (nodeId: string) => {
     if (disabled) return;
@@ -61,17 +79,17 @@ const Grid: React.FC<GridProps> = ({
     setState(prev => {
       const updatedNodes = { ...prev.nodes };
       const targetNode = updatedNodes[pendingInfection.to];
-     const originalState = targetNode.state;
-     let stateChanged = false;
+      const originalState = targetNode.state;
+      let stateChanged = false;
       
       if (success) {
         if (vaccinationMode && targetNode.state === "VaccinatedSafe") {
           targetNode.state = "VaccinatedFailed";
-         stateChanged = true;
+          stateChanged = true;
         } else if (targetNode.state !== "Immune" && 
                   targetNode.state !== "VaccinatedSafe") {
           targetNode.state = "Infected";
-         stateChanged = true;
+          stateChanged = true;
         }
       } else {
         // Handle failed infection based on model type
@@ -80,19 +98,19 @@ const Grid: React.FC<GridProps> = ({
           if (targetNode.state !== "Immune" && 
               targetNode.state !== "VaccinatedSafe") {
             targetNode.state = "Immune";
-           stateChanged = true;
+            stateChanged = true;
           }
         } else {
           // In SI model, failed infection can mark as failed attempt or leave susceptible
           if (targetNode.state !== "Immune" && 
               targetNode.state !== "VaccinatedSafe") {
             targetNode.state = "InfectionAttemptFailed";
-           stateChanged = true;
+            stateChanged = true;
           }
         }
       }
 
-      const newState = {
+      const newState: GameState = {
         ...prev,
         nodes: updatedNodes,
         history: [...prev.history, {
@@ -103,17 +121,70 @@ const Grid: React.FC<GridProps> = ({
         }]
       };
 
-      // Only update time series if state actually changed
-      if (stateChanged) {
-        const currentCounts = countNodeStates(updatedNodes);
+      return newState;
+    });
+
+    // Update time series outside setState if state actually changed
+    if (pendingInfection) {
+      const targetNode = state.nodes[pendingInfection.to];
+      const originalState = targetNode.state;
+      let willStateChange = false;
+      
+      if (success) {
+        if (vaccinationMode && targetNode.state === "VaccinatedSafe") {
+          willStateChange = true;
+        } else if (targetNode.state !== "Immune" && 
+                  targetNode.state !== "VaccinatedSafe") {
+          willStateChange = true;
+        }
+      } else {
+        // Handle failed infection based on model type
+        if (state.modelType === "SIR") {
+          if (targetNode.state !== "Immune" && 
+              targetNode.state !== "VaccinatedSafe") {
+            willStateChange = true;
+          }
+        } else {
+          if (targetNode.state !== "Immune" && 
+              targetNode.state !== "VaccinatedSafe") {
+            willStateChange = true;
+          }
+        }
+      }
+      
+      if (willStateChange) {
+        // Calculate what the new state will be
+        const futureNodes = { ...state.nodes };
+        const futureTargetNode = futureNodes[pendingInfection.to];
+        
+        if (success) {
+          if (vaccinationMode && futureTargetNode.state === "VaccinatedSafe") {
+            futureTargetNode.state = "VaccinatedFailed";
+          } else if (futureTargetNode.state !== "Immune" && 
+                    futureTargetNode.state !== "VaccinatedSafe") {
+            futureTargetNode.state = "Infected";
+          }
+        } else {
+          if (state.modelType === "SIR") {
+            if (futureTargetNode.state !== "Immune" && 
+                futureTargetNode.state !== "VaccinatedSafe") {
+              futureTargetNode.state = "Immune";
+            }
+          } else {
+            if (futureTargetNode.state !== "Immune" && 
+                futureTargetNode.state !== "VaccinatedSafe") {
+              futureTargetNode.state = "InfectionAttemptFailed";
+            }
+          }
+        }
+        
+        const currentCounts = countNodeStates(futureNodes);
         setTimeSeries(prevTS => [...prevTS, { 
           step: prevTS.length, 
           counts: currentCounts 
         }]);
       }
-
-      return newState;
-    });
+    }
 
     setPendingSource(null);
     setPendingInfection(null);
