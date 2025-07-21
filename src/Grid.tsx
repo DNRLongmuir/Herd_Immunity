@@ -11,7 +11,8 @@ const Grid: React.FC<GridProps> = ({
   vaccinationMode,
   pendingSource,
   setPendingSource,
-  disabled = false
+  disabled = false,
+  setTimeSeries
 }) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showVaccinatedWarning, setShowVaccinatedWarning] = useState(false);
@@ -110,6 +111,14 @@ const Grid: React.FC<GridProps> = ({
         }
       }
 
+      // Update time series if state actually changed
+      if (stateChanged) {
+        const currentCounts = countNodeStates(updatedNodes);
+        setTimeSeries(prevTS => [...prevTS, { 
+          step: prevTS.length, 
+          counts: currentCounts 
+        }]);
+      }
       const newState: GameState = {
         ...prev,
         nodes: updatedNodes,
@@ -124,67 +133,6 @@ const Grid: React.FC<GridProps> = ({
       return newState;
     });
 
-    // Update time series outside setState if state actually changed
-    if (pendingInfection) {
-      const targetNode = state.nodes[pendingInfection.to];
-      const originalState = targetNode.state;
-      let willStateChange = false;
-      
-      if (success) {
-        if (vaccinationMode && targetNode.state === "VaccinatedSafe") {
-          willStateChange = true;
-        } else if (targetNode.state !== "Immune" && 
-                  targetNode.state !== "VaccinatedSafe") {
-          willStateChange = true;
-        }
-      } else {
-        // Handle failed infection based on model type
-        if (state.modelType === "SIR") {
-          if (targetNode.state !== "Immune" && 
-              targetNode.state !== "VaccinatedSafe") {
-            willStateChange = true;
-          }
-        } else {
-          if (targetNode.state !== "Immune" && 
-              targetNode.state !== "VaccinatedSafe") {
-            willStateChange = true;
-          }
-        }
-      }
-      
-      if (willStateChange) {
-        // Calculate what the new state will be
-        const futureNodes = { ...state.nodes };
-        const futureTargetNode = futureNodes[pendingInfection.to];
-        
-        if (success) {
-          if (vaccinationMode && futureTargetNode.state === "VaccinatedSafe") {
-            futureTargetNode.state = "VaccinatedFailed";
-          } else if (futureTargetNode.state !== "Immune" && 
-                    futureTargetNode.state !== "VaccinatedSafe") {
-            futureTargetNode.state = "Infected";
-          }
-        } else {
-          if (state.modelType === "SIR") {
-            if (futureTargetNode.state !== "Immune" && 
-                futureTargetNode.state !== "VaccinatedSafe") {
-              futureTargetNode.state = "Immune";
-            }
-          } else {
-            if (futureTargetNode.state !== "Immune" && 
-                futureTargetNode.state !== "VaccinatedSafe") {
-              futureTargetNode.state = "InfectionAttemptFailed";
-            }
-          }
-        }
-        
-        const currentCounts = countNodeStates(futureNodes);
-        setTimeSeries(prevTS => [...prevTS, { 
-          step: prevTS.length, 
-          counts: currentCounts 
-        }]);
-      }
-    }
 
     setPendingSource(null);
     setPendingInfection(null);
