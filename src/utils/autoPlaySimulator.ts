@@ -13,7 +13,7 @@ export class AutoPlaySimulator {
 
   constructor(
     private setState: React.Dispatch<React.SetStateAction<GameState>>,
-    private setTimeSeries: React.Dispatch<React.SetStateAction<Array<{ step: number; counts: Record<NodeState, number> }>>>,
+    private updateTimeSeriesCallback: (updatedNodes: Record<string, GridNode>, oldNodes: Record<string, GridNode>) => void,
     private onComplete: () => void
   ) {}
 
@@ -130,10 +130,7 @@ export class AutoPlaySimulator {
         // Update time series if state actually changed
         if (stateChanged) {
           const currentCounts = this.countNodeStates(updatedNodes);
-          this.setTimeSeries(ts => [
-            ...ts,
-            { step: ts.length, counts: currentCounts },
-          ]);
+          this.updateTimeSeriesCallback(updatedNodes, prevState.nodes);
         }
         const newHistoryEntry = {
           from: currentNodeId,
@@ -201,7 +198,7 @@ export class AutoPlaySimulator {
       };
 
       // Update time series if state changed
-      this.updateTimeSeriesIfChanged(updatedNodes, oldNodes);
+      this.updateTimeSeriesCallback(updatedNodes, oldNodes);
 
       return newState;
     });
