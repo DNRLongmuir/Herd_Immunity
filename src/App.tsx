@@ -608,16 +608,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Time Series Toggle */}
-        <div className="text-center mt-6">
-          <button
-            onClick={() => setShowTimeSeries(!showTimeSeries)}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-          >
-            {showTimeSeries ? "Hide Time Series" : "Show Time Series"}
-          </button>
-        </div>
-
         {/* Time Series Chart */}
         {showTimeSeries && <TimeSeriesChart timeSeries={timeSeries} show={showTimeSeries} />}
 
