@@ -3,18 +3,18 @@ import { NodeState } from "../types";
 export const getColorForState = (state: NodeState): string => {
   switch (state) {
     case "Susceptible":
-      return "#e0e0e0";
+      return "#c0c0c0";
     case "VaccinatedSafe":
-      return "#87ceeb"; // Sky blue - better contrast for projectors
+      return "#4682b4"; // Steel blue - darker blue for projectors
     case "VaccinatedFailed":
-      return "#dda0dd"; // Plum - light purple with good contrast
+      return "#9370db"; // Medium slate blue - darker purple for projectors
     case "Infected":
       return "#ff4444";
     case "Immune":
-      return "#90EE90"; // Light green for immune state (R in SIR model)
+      return "#32cd32"; // Lime green - darker green for projectors
     case "InfectionAttemptFailed":
-      return "#ffd700";
+      return "#daa520"; // Goldenrod - darker yellow for projectors
     default:
-      return "#e0e0e0";
+      return "#c0c0c0";
   }
 };
