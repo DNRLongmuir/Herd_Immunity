@@ -278,7 +278,7 @@ export default function App() {
     }
 
     toPng(captureElement, {
-      backgroundColor: '#ffffff',
+      backgroundColor: darkMode ? '#374151' : '#ffffff',
       width: captureElement.scrollWidth,
       height: captureElement.scrollHeight,
       style: {
@@ -624,7 +624,7 @@ export default function App() {
             style={{
               display: 'inline-block',
               padding: '16px',
-              backgroundColor: '#ffffff',
+              backgroundColor: darkMode ? '#374151' : '#ffffff',
             }}
           >
             <Grid

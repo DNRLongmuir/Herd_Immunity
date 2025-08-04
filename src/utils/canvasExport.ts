@@ -1,7 +1,7 @@
 import { GameState, GridNode } from '../types';
 import { getColorForState } from './colorMapping';
 
-export const exportGridToCanvas = (state: GameState, gameNumber: number): void => {
+export const exportGridToCanvas = (state: GameState, gameNumber: number, darkMode: boolean = false): void => {
   const { gridSize, nodes } = state;
   const cellSize = 64;
   const gap = 4;
@@ -22,8 +22,8 @@ export const exportGridToCanvas = (state: GameState, gameNumber: number): void =
     return;
   }
   
-  // Set white background
-  ctx.fillStyle = '#ffffff';
+  // Set background color based on mode
+  ctx.fillStyle = darkMode ? '#374151' : '#ffffff';
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
   
   // Helper function to get grid number
