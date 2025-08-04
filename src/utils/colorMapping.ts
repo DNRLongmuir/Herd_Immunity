@@ -5,9 +5,9 @@ export const getColorForState = (state: NodeState): string => {
     case "Susceptible":
       return "#e0e0e0";
     case "VaccinatedSafe":
-      return "#add8e6";
+      return "#87ceeb"; // Sky blue - better contrast for projectors
     case "VaccinatedFailed":
-      return "#4169e1";
+      return "#dda0dd"; // Plum - light purple with good contrast
     case "Infected":
       return "#ff4444";
     case "Immune":
