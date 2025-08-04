@@ -77,6 +77,7 @@ export default function App() {
   const [showSessionDialog, setShowSessionDialog] = useState<boolean>(true);
   const [showEndGameDialog, setShowEndGameDialog] = useState<boolean>(false);
   const [autoPlayRunning, setAutoPlayRunning] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(false);
   
   // New state hooks for seeding system
   const [seedAttemptsRemaining, setSeedAttemptsRemaining] = useState<number>(3);
@@ -397,16 +398,35 @@ export default function App() {
   const isSeedButtonDisabled = isControlsDisabled || isSeeded || seedAttemptsRemaining === 0;
 
   if (showSessionDialog) {
-    return <SessionDialog onSubmit={handleSessionSubmit} />;
+    return <SessionDialog onSubmit={handleSessionSubmit} darkMode={darkMode} />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8 overflow-x-auto">
-      <div className="min-w-fit mx-auto bg-white rounded-lg shadow-lg p-6">
+    <div className={`min-h-screen p-8 overflow-x-auto transition-colors duration-300 ${
+      darkMode ? 'bg-gray-900' : 'bg-gray-100'
+    }`}>
+      <div className={`min-w-fit mx-auto rounded-lg shadow-lg p-6 transition-colors duration-300 ${
+        darkMode ? 'bg-gray-800' : 'bg-white'
+      }`}>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">{sessionName} — {sessionDate}</h2>
+          <h2 className={`text-2xl font-bold transition-colors duration-300 ${
+            darkMode ? 'text-white' : 'text-gray-900'
+          }`}>{sessionName} — {sessionDate}</h2>
           <div className="flex items-center gap-4">
-            <span className="text-lg font-semibold">Game #{gameNumber}</span>
+            <span className={`text-lg font-semibold transition-colors duration-300 ${
+              darkMode ? 'text-gray-200' : 'text-gray-900'
+            }`}>Game #{gameNumber}</span>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className={`px-3 py-2 rounded transition-colors duration-300 ${
+                darkMode 
+                  ? 'bg-yellow-500 text-gray-900 hover:bg-yellow-400' 
+                  : 'bg-gray-700 text-white hover:bg-gray-600'
+              }`}
+              title="Toggle dark mode"
+            >
+              {darkMode ? '☀️' : '🌙'}
+            </button>
             <button
               onClick={startNewSession}
               disabled={isControlsDisabled}
@@ -423,8 +443,12 @@ export default function App() {
 
         {/* Auto-play status indicator */}
         {autoPlayRunning && (
-          <div className="text-center mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
-            <p className="text-yellow-800 font-semibold">
+          <div className={`text-center mb-4 p-3 border rounded-lg transition-colors duration-300 ${
+            darkMode 
+              ? 'bg-yellow-900 border-yellow-700 text-yellow-200' 
+              : 'bg-yellow-100 border-yellow-300 text-yellow-800'
+          }`}>
+            <p className="font-semibold">
               🤖 Auto-Play running... 
               {autoPlaySimulatorRef.current && (
                 <span className="ml-2">
@@ -540,11 +564,13 @@ export default function App() {
             setSelectedState={setSelectedState}
             disabled={isControlsDisabled}
             modelType={state.modelType}
+            darkMode={darkMode}
           />
           <InfectionModeToggle
             infectionMode={infectionMode}
             setInfectionMode={setInfectionMode}
             disabled={isControlsDisabled}
+            darkMode={darkMode}
           />
           <VaccinationEfficacyToggle
             vaccinationMode={vaccinationMode}
@@ -552,24 +578,32 @@ export default function App() {
             vaccinationLabel={vaccinationLabel}
             setVaccinationLabel={setVaccinationLabel}
             disabled={isControlsDisabled}
+            darkMode={darkMode}
           />
           <ModelTypeSelector
             modelType={state.modelType}
             setModelType={handleModelTypeChange}
             disabled={isModelTypeDisabled}
+            darkMode={darkMode}
           />
         </div>
 
         {/* Status Message */}
         <div className="text-center mb-4">
           {autoPlayRunning ? (
-            <p className="text-orange-600 font-semibold">
+            <p className={`font-semibold transition-colors duration-300 ${
+              darkMode ? 'text-orange-400' : 'text-orange-600'
+            }`}>
               Auto-Play is running - manual controls disabled
             </p>
           ) : pendingSource ? (
-            <p className="text-red-500">Select a target for infection from {pendingSource}</p>
+            <p className={`transition-colors duration-300 ${
+              darkMode ? 'text-red-400' : 'text-red-500'
+            }`}>Select a target for infection from {pendingSource}</p>
           ) : (
-            <p className="text-gray-500">
+            <p className={`transition-colors duration-300 ${
+              darkMode ? 'text-gray-400' : 'text-gray-500'
+            }`}>
               {infectionMode
                 ? `Click an infected cell to start an infection (${state.modelType} model)`
                 : selectedState
@@ -603,13 +637,14 @@ export default function App() {
               setPendingSource={setPendingSource}
               disabled={isControlsDisabled}
               updateTimeSeriesIfChanged={updateTimeSeriesIfChanged}
+              darkMode={darkMode}
             />
             <InfectionArrows state={state} gridRef={gridRef} />
           </div>
         </div>
 
         {/* Time Series Chart */}
-        {showTimeSeries && <TimeSeriesChart timeSeries={timeSeries} show={showTimeSeries} />}
+        <TimeSeriesChart timeSeries={timeSeries} show={showTimeSeries} darkMode={darkMode} />
 
         {/* End Game Dialog */}
         {showEndGameDialog && (
@@ -617,13 +652,16 @@ export default function App() {
             message="Is this the end of the simulation?"
             onConfirm={() => handleEndGameConfirm(true)}
             onCancel={() => handleEndGameConfirm(false)}
+            darkMode={darkMode}
           />
         )}
 
         {/* Seed Attempt Dialog */}
         {showSeedDialog && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className={`rounded-lg p-6 max-w-md w-full transition-colors duration-300 ${
+              darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+            }`}>
               <p className="text-lg mb-6">{seedDialogMessage}</p>
               <div className="flex justify-end">
                 <button

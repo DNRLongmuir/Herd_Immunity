@@ -6,7 +6,8 @@ const StatePalette: React.FC<StatePaletteProps> = ({
   selectedState, 
   setSelectedState, 
   disabled = false, 
-  modelType 
+  modelType,
+  darkMode = false
 }) => {
   // Define states based on model type
   const getStatesForModel = (): NodeState[] => {

@@ -19,9 +19,10 @@ type TSEntry = {
 type Props = {
   timeSeries: TSEntry[];
   show: boolean;
+  darkMode?: boolean;
 };
 
-const TimeSeriesChart: React.FC<Props> = ({ timeSeries, show }) => {
+const TimeSeriesChart: React.FC<Props> = ({ timeSeries, show, darkMode = false }) => {
   if (!show) return null;
 
   const data = timeSeries.map((entry) => ({
@@ -36,16 +37,29 @@ const TimeSeriesChart: React.FC<Props> = ({ timeSeries, show }) => {
 
   return (
     <div className="mt-4 w-full h-[400px]">
-      <h3 className="text-center text-xl font-bold mb-4">Epidemic Trajectory</h3>
+      <h3 className={`text-center text-xl font-bold mb-4 transition-colors duration-300 ${
+        darkMode ? 'text-white' : 'text-gray-900'
+      }`}>Epidemic Trajectory</h3>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-          <CartesianGrid strokeDasharray="3 3" />
+          <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e5e7eb'} />
           <XAxis 
             dataKey="step" 
             label={{ value: 'Time Step', position: 'insideBottomRight', offset: -5 }}
+            tick={{ fill: darkMode ? '#d1d5db' : '#374151' }}
           />
-          <YAxis label={{ value: 'Count', angle: -90, position: 'insideLeft' }} />
-          <Tooltip />
+          <YAxis 
+            label={{ value: 'Count', angle: -90, position: 'insideLeft' }}
+            tick={{ fill: darkMode ? '#d1d5db' : '#374151' }}
+          />
+          <Tooltip 
+            contentStyle={{
+              backgroundColor: darkMode ? '#374151' : '#ffffff',
+              border: `1px solid ${darkMode ? '#6b7280' : '#e5e7eb'}`,
+              borderRadius: '6px',
+              color: darkMode ? '#ffffff' : '#000000'
+            }}
+          />
           <Legend verticalAlign="top" height={36} />
           
           <Line

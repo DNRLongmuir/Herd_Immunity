@@ -39,6 +39,7 @@ export interface StatePaletteProps {
   setSelectedState: (newState: NodeState | null) => void;
   disabled?: boolean;
   modelType: ModelType;        // New prop for model type
+  darkMode?: boolean;
 }
 
 // Props for InfectionModeToggle component
@@ -46,6 +47,7 @@ export interface InfectionModeToggleProps {
   infectionMode: boolean;
   setInfectionMode: (flag: boolean) => void;
   disabled?: boolean;
+  darkMode?: boolean;
 }
 
 // Props for VaccinationEfficacyToggle component
@@ -55,6 +57,7 @@ export interface VaccinationEfficacyToggleProps {
   vaccinationLabel: string | null;
   setVaccinationLabel: (label: string | null) => void;
   disabled?: boolean;
+  darkMode?: boolean;
 }
 
 // Props for ModelTypeSelector component
@@ -62,6 +65,7 @@ export interface ModelTypeSelectorProps {
   modelType: ModelType;
   setModelType: (modelType: ModelType) => void;
   disabled?: boolean;
+  darkMode?: boolean;
 }
 
 // Props for Grid component
@@ -75,6 +79,7 @@ export interface GridProps {
   setPendingSource: (id: string | null) => void;
   disabled?: boolean;
   updateTimeSeriesIfChanged: (newNodes: Record<string, GridNode>, oldNodes: Record<string, GridNode>) => void;
+  darkMode?: boolean;
 }
 
 // Props for InfectionArrows component
@@ -87,6 +92,7 @@ export interface InfectionArrowsProps {
 export interface TimeSeriesViewerProps {
   timeSeries: Array<{ step: number; counts: Record<NodeState, number> }>;
   show: boolean;
+  darkMode?: boolean;
 }
 
 // Session data structure
