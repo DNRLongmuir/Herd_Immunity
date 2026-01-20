@@ -57,10 +57,10 @@ export class AutoPlaySimulator {
   private async processInfectedNode(currentNodeId: string, gameState: GameState): Promise<void> {
     if (!this.isRunning) return;
 
-    // CRITICAL: Only process if the current node is still Infected
+    // CRITICAL: Only process if the current node is still Infected or VaccinatedFailed
     const currentNode = gameState.nodes[currentNodeId];
-    if (!currentNode || currentNode.state !== "Infected") {
-      console.log(`Skipping node ${currentNodeId} - no longer infected (state: ${currentNode?.state})`);
+    if (!currentNode || (currentNode.state !== "Infected" && currentNode.state !== "VaccinatedFailed")) {
+      console.log(`Skipping node ${currentNodeId} - no longer infectious (state: ${currentNode?.state})`);
       return;
     }
 
@@ -172,7 +172,7 @@ export class AutoPlaySimulator {
 
   private findInfectedNodes(gameState: GameState): string[] {
     return Object.values(gameState.nodes)
-      .filter(node => node.state === "Infected")
+      .filter(node => node.state === "Infected" || node.state === "VaccinatedFailed")
       .map(node => node.id);
   }
 

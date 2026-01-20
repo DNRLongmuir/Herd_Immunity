@@ -27,8 +27,8 @@ const Grid: React.FC<GridProps> = ({
 
     if (infectionMode) {
       if (pendingSource === null) {
-        // Only allow selecting infected nodes as source
-        if (node.state === "Infected") {
+        // Only allow selecting infected or vaccinatedFailed nodes as source
+        if (node.state === "Infected" || node.state === "VaccinatedFailed") {
           setPendingSource(nodeId);
         }
       } else {

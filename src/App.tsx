@@ -643,7 +643,7 @@ export default function App() {
         </div>
 
         {/* Time Series Chart */}
-        <TimeSeriesChart timeSeries={timeSeries} show={timeSeries.length > 0} darkMode={darkMode} />
+        <TimeSeriesChart timeSeries={timeSeries} show={infectionMode} darkMode={darkMode} />
 
         {/* End Game Dialog */}
         {showEndGameDialog && (
