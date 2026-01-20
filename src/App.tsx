@@ -86,19 +86,28 @@ export default function App() {
   
   const gridRef = useRef<HTMLDivElement>(null);
   const autoPlaySimulatorRef = useRef<AutoPlaySimulator | null>(null);
+  const infectionModeRef = useRef<boolean>(infectionMode);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    infectionModeRef.current = infectionMode;
+  }, [infectionMode]);
 
   // Centralized function to update time series when state changes
   const updateTimeSeriesIfChanged = (newNodes: Record<string, GridNode>, oldNodes: Record<string, GridNode>) => {
+    // Only track time series when infection mode is active
+    if (!infectionModeRef.current) return;
+
     // Check if any node actually changed state
-    const hasStateChange = Object.keys(newNodes).some(nodeId => 
+    const hasStateChange = Object.keys(newNodes).some(nodeId =>
       newNodes[nodeId].state !== oldNodes[nodeId].state
     );
-    
+
     if (hasStateChange) {
       const currentCounts = countNodeStates(newNodes);
-      setTimeSeries(prev => [...prev, { 
-        step: prev.length, 
-        counts: currentCounts 
+      setTimeSeries(prev => [...prev, {
+        step: prev.length,
+        counts: currentCounts
       }]);
     }
   };
