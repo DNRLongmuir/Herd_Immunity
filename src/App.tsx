@@ -96,9 +96,6 @@ export default function App() {
 
   // Centralized function to update time series when state changes
   const updateTimeSeriesIfChanged = (newNodes: Record<string, GridNode>, oldNodes: Record<string, GridNode>) => {
-    // Only track time series when infection mode is active
-    if (!infectionModeRef.current) return;
-
     // Check if any node actually changed state
     const hasStateChange = Object.keys(newNodes).some(nodeId =>
       newNodes[nodeId].state !== oldNodes[nodeId].state
@@ -130,28 +127,27 @@ export default function App() {
     };
   }, []);
 
-  // Initialize time series when infection mode is enabled
+  // Show end game dialog when infection mode is turned off
   useEffect(() => {
-    // Check if infection mode was just turned ON (transition from false to true)
-    if (infectionMode && !prevInfectionModeRef.current) {
-      const currentCounts = countNodeStates(state.nodes);
-      setTimeSeries([{ step: 0, counts: currentCounts }]);
-      console.log('Infection mode enabled - initializing time series:', currentCounts);
-    } else if (!infectionMode && prevInfectionModeRef.current) {
-      // Infection mode was just turned OFF
-      setShowEndGameDialog(timeSeries.length > 0);
+    // Check if infection mode was just turned OFF (transition from true to false)
+    if (!infectionMode && prevInfectionModeRef.current) {
+      setShowEndGameDialog(timeSeries.length > 1); // More than just step 0
     }
 
     // Update the previous value
     prevInfectionModeRef.current = infectionMode;
-  }, [infectionMode, state.nodes, timeSeries.length]);
+  }, [infectionMode, timeSeries.length]);
 
 
   function handleSessionSubmit(name: string) {
     setSessionName(name);
     setSessionDate(formatDate(new Date()));
     setGameNumber(1);
-    setTimeSeries([]);
+
+    // Initialize time series with step 0
+    const initialCounts = countNodeStates(state.nodes);
+    setTimeSeries([{ step: 0, counts: initialCounts }]);
+
     // Reset seeding state
     setSeedAttemptsRemaining(3);
     setIsSeeded(false);
@@ -203,7 +199,7 @@ export default function App() {
       autoPlaySimulatorRef.current.stop();
     }
     setAutoPlayRunning(false);
-    
+
     const freshNodes = createInitialNodes(rows, cols);
     setState(prev => ({
       gridSize: { rows, cols },
@@ -212,7 +208,11 @@ export default function App() {
       modelType: prev.modelType, // Preserve model type
     }));
     setPendingSource(null);
-    setTimeSeries([]);
+
+    // Initialize time series with step 0
+    const initialCounts = countNodeStates(freshNodes);
+    setTimeSeries([{ step: 0, counts: initialCounts }]);
+
     // Reset seeding state
     setSeedAttemptsRemaining(3);
     setIsSeeded(false);
@@ -220,8 +220,8 @@ export default function App() {
 
   function handleModelTypeChange(newModelType: ModelType) {
     // Check if grid is not fresh (has history or time series data)
-    const hasData = state.history.length > 0 || timeSeries.length > 0;
-    
+    const hasData = state.history.length > 0 || timeSeries.length > 1; // More than just step 0
+
     if (hasData) {
       // Reset grid and increment game number
       const freshNodes = createInitialNodes(state.gridSize.rows, state.gridSize.cols);
@@ -232,12 +232,16 @@ export default function App() {
         modelType: newModelType,
       }));
       setPendingSource(null);
-      setTimeSeries([]);
+
+      // Initialize time series with step 0
+      const initialCounts = countNodeStates(freshNodes);
+      setTimeSeries([{ step: 0, counts: initialCounts }]);
+
       setGameNumber(prev => prev + 1);
       // Reset seeding state for new game
       setSeedAttemptsRemaining(3);
       setIsSeeded(false);
-      
+
       console.log(`Model type changed from ${state.modelType} to ${newModelType}, grid reset, game number incremented to ${gameNumber + 1}`);
     } else {
       // Just change the model type
