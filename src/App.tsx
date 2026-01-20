@@ -87,6 +87,7 @@ export default function App() {
   const gridRef = useRef<HTMLDivElement>(null);
   const autoPlaySimulatorRef = useRef<AutoPlaySimulator | null>(null);
   const infectionModeRef = useRef<boolean>(infectionMode);
+  const prevInfectionModeRef = useRef<boolean>(false);
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -131,13 +132,19 @@ export default function App() {
 
   // Initialize time series when infection mode is enabled
   useEffect(() => {
-    if (infectionMode) {
+    // Check if infection mode was just turned ON (transition from false to true)
+    if (infectionMode && !prevInfectionModeRef.current) {
       const currentCounts = countNodeStates(state.nodes);
-      setTimeSeries(prev => prev.length === 0 ? [{ step: 0, counts: currentCounts }] : prev);
-    } else {
+      setTimeSeries([{ step: 0, counts: currentCounts }]);
+      console.log('Infection mode enabled - initializing time series:', currentCounts);
+    } else if (!infectionMode && prevInfectionModeRef.current) {
+      // Infection mode was just turned OFF
       setShowEndGameDialog(timeSeries.length > 0);
     }
-  }, [infectionMode]);
+
+    // Update the previous value
+    prevInfectionModeRef.current = infectionMode;
+  }, [infectionMode, state.nodes, timeSeries.length]);
 
 
   function handleSessionSubmit(name: string) {
