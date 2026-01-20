@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GridProps, NodeState } from './types';
+import { GridProps, NodeState, GameState } from './types';
 import { getColorForState } from './utils/colorMapping';
 import ConfirmationDialog from './ConfirmationDialog';
 
@@ -178,6 +178,7 @@ const Grid: React.FC<GridProps> = ({
           message={`Was infection from ${pendingInfection?.from} to ${pendingInfection?.to} successful?`}
           onConfirm={() => handleInfectionConfirm(true)}
           onCancel={() => handleInfectionConfirm(false)}
+          darkMode={darkMode}
         />
       )}
 

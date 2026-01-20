@@ -69,7 +69,6 @@ export default function App() {
   const [vaccinationMode, setVaccinationMode] = useState<boolean>(false);
   const [vaccinationLabel, setVaccinationLabel] = useState<string | null>(null);
   const [pendingSource, setPendingSource] = useState<string | null>(null);
-  const [showTimeSeries, setShowTimeSeries] = useState<boolean>(false);
   const [timeSeries, setTimeSeries] = useState<Array<{ step: number; counts: Record<NodeState, number> }>>([]);
   const [sessionName, setSessionName] = useState<string>('');
   const [sessionDate, setSessionDate] = useState<string>('');
@@ -119,7 +118,7 @@ export default function App() {
         autoPlaySimulatorRef.current.stop();
       }
     };
-  }, [timeSeries]);
+  }, []);
 
   // Initialize time series when infection mode is enabled
   useEffect(() => {
@@ -644,7 +643,7 @@ export default function App() {
         </div>
 
         {/* Time Series Chart */}
-        <TimeSeriesChart timeSeries={timeSeries} show={showTimeSeries} darkMode={darkMode} />
+        <TimeSeriesChart timeSeries={timeSeries} show={timeSeries.length > 0} darkMode={darkMode} />
 
         {/* End Game Dialog */}
         {showEndGameDialog && (

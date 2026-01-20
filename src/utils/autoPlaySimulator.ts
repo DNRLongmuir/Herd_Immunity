@@ -73,17 +73,22 @@ export class AutoPlaySimulator {
 
       // Always read the latest state
       const neighborState = gameState.nodes[neighborId]?.state;
-      
-      // Skip anything that isn't Susceptible
-      if (neighborState !== "Susceptible") continue;
-      
+
+      // Skip nodes that are already Infected
+      if (neighborState === "Infected") continue;
+
       // Always skip VaccinatedSafe nodes in Auto-Play (no vaccination efficacy in auto mode)
       if (neighborState === "VaccinatedSafe") {
         continue;
       }
-      
+
       // In SIR mode, skip Immune nodes
       if (gameState.modelType === "SIR" && neighborState === "Immune") {
+        continue;
+      }
+
+      // Skip nodes that aren't Susceptible (after checking specific states above)
+      if (neighborState !== "Susceptible") {
         continue;
       }
 
@@ -215,16 +220,19 @@ export class AutoPlaySimulator {
       // Filter based on model type - same logic as processInfectedNode
       const eligibleNeighbors = neighbors.filter(neighborId => {
         const neighborState = gameState.nodes[neighborId]?.state;
-        
-        // Only consider Susceptible neighbors
-        if (neighborState !== "Susceptible") return false;
-        
+
+        // Skip nodes that are already Infected
+        if (neighborState === "Infected") return false;
+
         // Skip VaccinatedSafe nodes in Auto-Play
         if (neighborState === "VaccinatedSafe") return false;
-        
+
         // In SIR mode, skip Immune nodes
         if (gameState.modelType === "SIR" && neighborState === "Immune") return false;
-        
+
+        // Only consider Susceptible neighbors (after excluding specific states)
+        if (neighborState !== "Susceptible") return false;
+
         return true;
       });
       
