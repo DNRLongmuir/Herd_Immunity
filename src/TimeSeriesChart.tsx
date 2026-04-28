@@ -65,7 +65,7 @@ const TimeSeriesChart: React.FC<Props> = ({ timeSeries, show, darkMode = false }
           <Line
             type="monotone"
             dataKey="Susceptible"
-            stroke="#e0e0e0"
+            stroke="#9ca3af"
             strokeWidth={2}
             dot={false}
             name="Susceptible"

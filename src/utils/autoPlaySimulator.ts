@@ -54,57 +54,43 @@ export class AutoPlaySimulator {
     return counts;
   }
 
-  private async processInfectedNode(currentNodeId: string, gameState: GameState): Promise<void> {
+  private getCurrentState(): Promise<GameState> {
+    return new Promise(resolve => {
+      this.setState(current => {
+        resolve(current);
+        return current;
+      });
+    });
+  }
+
+  private async processInfectedNode(currentNodeId: string): Promise<void> {
     if (!this.isRunning) return;
 
-    // CRITICAL: Only process if the current node is still Infected or VaccinatedFailed
+    const gameState = await this.getCurrentState();
+
     const currentNode = gameState.nodes[currentNodeId];
     if (!currentNode || (currentNode.state !== "Infected" && currentNode.state !== "VaccinatedFailed")) {
-      console.log(`Skipping node ${currentNodeId} - no longer infectious (state: ${currentNode?.state})`);
       return;
     }
 
-    // Get all orthogonal neighbors
     const neighbors = this.getOrthogonalNeighbors(currentNodeId, gameState.gridSize);
 
-    // Loop through each neighbor and decide eligibility at runtime
     for (const neighborId of neighbors) {
       if (!this.isRunning) return;
 
-      // Always read the latest state
-      const neighborState = gameState.nodes[neighborId]?.state;
+      const latestState = await this.getCurrentState();
+      const neighborState = latestState.nodes[neighborId]?.state;
 
-      // Skip nodes that are already Infected
       if (neighborState === "Infected") continue;
+      if (neighborState === "VaccinatedSafe") continue;
+      if (latestState.modelType === "SIR" && neighborState === "Immune") continue;
+      if (neighborState !== "Susceptible") continue;
 
-      // Always skip VaccinatedSafe nodes in Auto-Play (no vaccination efficacy in auto mode)
-      if (neighborState === "VaccinatedSafe") {
-        continue;
-      }
-
-      // In SIR mode, skip Immune nodes
-      if (gameState.modelType === "SIR" && neighborState === "Immune") {
-        continue;
-      }
-
-      // Skip nodes that aren't Susceptible (after checking specific states above)
-      if (neighborState !== "Susceptible") {
-        continue;
-      }
-
-      // Wait 1 second before attempting infection
       await this.delay(1000);
       if (!this.isRunning) return;
 
-      // 50/50 infection attempt
       const success = Math.random() < 0.5;
-      console.log(
-        `Attempting infection from ${currentNodeId} to ${neighborId}: ${
-          success ? "SUCCESS" : "FAILED"
-        } (${gameState.modelType} mode)`
-      );
 
-      // Update state, queue, history, and time series
       this.setState(prevState => {
         const updatedNodes = { ...prevState.nodes };
         let targetNode = { ...updatedNodes[neighborId] };
@@ -124,6 +110,9 @@ export class AutoPlaySimulator {
             targetNode.state = "Infected";
             stateChanged = true;
             this.queue.push(neighborId);
+          } else {
+            targetNode.state = "InfectionAttemptFailed";
+            stateChanged = true;
           }
         }
 
@@ -132,20 +121,18 @@ export class AutoPlaySimulator {
         if (stateChanged) {
           this.updateTimeSeriesCallback(updatedNodes, prevState.nodes);
         }
-        const newHistoryEntry = {
-          from: currentNodeId,
-          to: neighborId,
-          success,
-          timestamp: Date.now(),
-        };
 
-        const newState: GameState = {
+        return {
           ...prevState,
           nodes: updatedNodes,
-          history: [...prevState.history, newHistoryEntry],
+          history: [...prevState.history, {
+            from: currentNodeId,
+            to: neighborId,
+            success,
+            timestamp: Date.now(),
+            previousState: prevState.nodes[neighborId].state,
+          }],
         };
-
-        return newState;
       });
     }
   }
@@ -187,10 +174,11 @@ export class AutoPlaySimulator {
       updatedNodes[randomNode.id] = { ...updatedNodes[randomNode.id], state: "Infected" };
       
       const newHistoryEntry = {
-        from: null, // Seeded infection
+        from: null,
         to: randomNode.id,
         success: true,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        previousState: oldNodes[randomNode.id].state,
       };
 
       const newState = {
@@ -271,28 +259,16 @@ export class AutoPlaySimulator {
     console.log(`Initialized queue with ${this.queue.length} infected nodes`);
 
     try {
-      // Process queue until empty or no more infections possible
       while (this.queue.length > 0 && this.isRunning) {
         const currentNodeId = this.queue.shift()!;
-        console.log(`Processing queue item: ${currentNodeId}, remaining queue: ${this.queue.length}`);
-        
-        // Get current game state for processing
-        await new Promise<void>((resolve, reject) => {
-          this.setState(currentState => {
-            // Check if there are still susceptible neighbors that can be infected
-            if (!this.hasInfectableSusceptibleNeighbors(currentState)) {
-              console.log(`No more eligible neighbors available for infection in ${currentState.modelType} mode, stopping auto-play`);
-              this.queue = []; // Clear queue to stop processing
-              resolve();
-              return currentState;
-            }
-            
-            this.processInfectedNode(currentNodeId, currentState)
-              .then(resolve)
-              .catch(reject);
-            return currentState;
-          });
-        });
+
+        const currentState = await this.getCurrentState();
+        if (!this.hasInfectableSusceptibleNeighbors(currentState)) {
+          this.queue = [];
+          break;
+        }
+
+        await this.processInfectedNode(currentNodeId);
       }
       
       if (this.isRunning) {

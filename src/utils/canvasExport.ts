@@ -92,8 +92,6 @@ const drawInfectionArrows = (
 ): void => {
   const { gridSize, history } = state;
   
-  // Set arrow style
-  ctx.strokeWidth = 2;
   ctx.lineWidth = 2;
   
   history.forEach(({ from, to, success }) => {

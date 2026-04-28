@@ -24,11 +24,12 @@ export interface GridNode {
 export interface GameState {
   gridSize: { rows: number; cols: number };
   nodes: Record<string, GridNode>;
-  history: Array<{ 
+  history: Array<{
     from: string | null;       // if null, it means a seeded infection
-    to: string; 
-    success: boolean; 
-    timestamp: number 
+    to: string;
+    success: boolean;
+    timestamp: number;
+    previousState: NodeState;  // state of 'to' node before this event
   }>;
   modelType: ModelType;        // New field for model type
 }

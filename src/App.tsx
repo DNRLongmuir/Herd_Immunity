@@ -88,6 +88,7 @@ export default function App() {
   const autoPlaySimulatorRef = useRef<AutoPlaySimulator | null>(null);
   const infectionModeRef = useRef<boolean>(infectionMode);
   const prevInfectionModeRef = useRef<boolean>(false);
+  const seedingRef = useRef<boolean>(false);
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -151,6 +152,7 @@ export default function App() {
     // Reset seeding state
     setSeedAttemptsRemaining(3);
     setIsSeeded(false);
+    seedingRef.current = false;
     setShowSessionDialog(false);
   }
 
@@ -196,6 +198,7 @@ export default function App() {
       // Reset seeding state for new game
       setSeedAttemptsRemaining(3);
       setIsSeeded(false);
+    seedingRef.current = false;
     }
     setShowEndGameDialog(false);
   }
@@ -223,6 +226,7 @@ export default function App() {
     // Reset seeding state
     setSeedAttemptsRemaining(3);
     setIsSeeded(false);
+    seedingRef.current = false;
   }
 
   function handleModelTypeChange(newModelType: ModelType) {
@@ -248,6 +252,7 @@ export default function App() {
       // Reset seeding state for new game
       setSeedAttemptsRemaining(3);
       setIsSeeded(false);
+    seedingRef.current = false;
 
       console.log(`Model type changed from ${state.modelType} to ${newModelType}, grid reset, game number incremented to ${gameNumber + 1}`);
     } else {
@@ -265,7 +270,7 @@ export default function App() {
       const newHistory = prev.history.slice(0, -1);
       const lastEvent = prev.history[prev.history.length - 1];
       const updatedNodes = { ...prev.nodes };
-      updatedNodes[lastEvent.to] = { ...updatedNodes[lastEvent.to], state: "Susceptible" };
+      updatedNodes[lastEvent.to] = { ...updatedNodes[lastEvent.to], state: lastEvent.previousState };
       return {
         ...prev,
         nodes: updatedNodes,
@@ -273,9 +278,7 @@ export default function App() {
       };
     });
     setPendingSource(null);
-    if (infectionMode) {
-      setTimeSeries(prev => prev.slice(0, -1));
-    }
+    setTimeSeries(prev => prev.length > 1 ? prev.slice(0, -1) : prev);
   }
 
   function downloadJSON() {
@@ -324,7 +327,9 @@ export default function App() {
   }
 
   function seedWeightedInfection() {
-    // Build pool of all node IDs with weights
+    if (seedingRef.current) return;
+    seedingRef.current = true;
+
     const nodeIds = Object.keys(state.nodes);
     const weights: number[] = [];
     
@@ -375,7 +380,7 @@ export default function App() {
       }
       
       setShowSeedDialog(true);
-      // Do not change any node state or history
+      seedingRef.current = false;
       return;
     } else {
       // Successful seeding - infect the chosen node
@@ -384,7 +389,7 @@ export default function App() {
         const updatedNodes = { ...prev.nodes };
         updatedNodes[chosenNodeId] = { ...updatedNodes[chosenNodeId], state: "Infected" };
 
-        const newHistoryEntry = { from: null, to: chosenNodeId, success: true, timestamp: Date.now() };
+        const newHistoryEntry = { from: null, to: chosenNodeId, success: true, timestamp: Date.now(), previousState: oldNodes[chosenNodeId].state };
         const newState = {
           ...prev,
           nodes: updatedNodes,

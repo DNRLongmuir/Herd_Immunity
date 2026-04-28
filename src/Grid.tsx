@@ -105,7 +105,8 @@ const Grid: React.FC<GridProps> = ({
           from: pendingInfection.from,
           to: pendingInfection.to,
           success,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          previousState: oldNodes[pendingInfection.to].state,
         }]
       };
 

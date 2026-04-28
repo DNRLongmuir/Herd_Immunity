@@ -42,10 +42,10 @@ const StatePalette: React.FC<StatePaletteProps> = ({
     switch (state) {
       case "Susceptible": return "S";
       case "VaccinatedSafe": return "V";
-      case "VaccinatedFailed": return "F";
+      case "VaccinatedFailed": return "VF";
       case "Infected": return "I";
-      case "Immune": return "R"; // R for Recovered/Removed in SIR model
-      case "InfectionAttemptFailed": return "F";
+      case "Immune": return "R";
+      case "InfectionAttemptFailed": return "X";
       default: return state.charAt(0);
     }
   };
