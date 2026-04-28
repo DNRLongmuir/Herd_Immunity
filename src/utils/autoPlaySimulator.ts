@@ -107,12 +107,10 @@ export class AutoPlaySimulator {
       // Update state, queue, history, and time series
       this.setState(prevState => {
         const updatedNodes = { ...prevState.nodes };
-        const targetNode = updatedNodes[neighborId];
-        const originalState = targetNode.state;
+        let targetNode = { ...updatedNodes[neighborId] };
         let stateChanged = false;
 
         if (prevState.modelType === "SIR") {
-          // SIR: failure → R (Immune), success → I
           if (success) {
             targetNode.state = "Infected";
             stateChanged = true;
@@ -122,19 +120,16 @@ export class AutoPlaySimulator {
             stateChanged = true;
           }
         } else {
-          // SI: failure → stay Susceptible, success → I
           if (success) {
             targetNode.state = "Infected";
             stateChanged = true;
             this.queue.push(neighborId);
           }
-          // On failure in SI mode, leave as Susceptible (no change)
-          // stateChanged remains false for SI failures
         }
 
-        // Update time series if state actually changed
+        updatedNodes[neighborId] = targetNode;
+
         if (stateChanged) {
-          const currentCounts = this.countNodeStates(updatedNodes);
           this.updateTimeSeriesCallback(updatedNodes, prevState.nodes);
         }
         const newHistoryEntry = {
@@ -162,11 +157,13 @@ export class AutoPlaySimulator {
       }
 
       const timeoutId = setTimeout(resolve, ms);
-      
-      this.abortController.signal.addEventListener('abort', () => {
+
+      const onAbort = () => {
         clearTimeout(timeoutId);
         reject(new Error('Aborted'));
-      });
+      };
+
+      this.abortController.signal.addEventListener('abort', onAbort, { once: true });
     });
   }
 
@@ -187,7 +184,7 @@ export class AutoPlaySimulator {
     this.setState(prevState => {
       const oldNodes = prevState.nodes;
       const updatedNodes = { ...prevState.nodes };
-      updatedNodes[randomNode.id].state = "Infected";
+      updatedNodes[randomNode.id] = { ...updatedNodes[randomNode.id], state: "Infected" };
       
       const newHistoryEntry = {
         from: null, // Seeded infection

@@ -53,11 +53,11 @@ const Grid: React.FC<GridProps> = ({
       setState(prev => {
         const oldNodes = prev.nodes;
         const updatedNodes = { ...prev.nodes };
-        updatedNodes[nodeId].state = selectedState;
-        
+        updatedNodes[nodeId] = { ...updatedNodes[nodeId], state: selectedState };
+
         // Update time series if state changed
         updateTimeSeriesIfChanged(updatedNodes, oldNodes);
-        
+
         return { ...prev, nodes: updatedNodes };
       });
     }
@@ -69,31 +69,31 @@ const Grid: React.FC<GridProps> = ({
     setState(prev => {
       const oldNodes = prev.nodes;
       const updatedNodes = { ...prev.nodes };
-      const targetNode = updatedNodes[pendingInfection.to];
-      
+      let targetNode = { ...updatedNodes[pendingInfection.to] };
+
       if (success) {
         if (vaccinationMode && targetNode.state === "VaccinatedSafe") {
           targetNode.state = "VaccinatedFailed";
-        } else if (targetNode.state !== "Immune" && 
+        } else if (targetNode.state !== "Immune" &&
                   targetNode.state !== "VaccinatedSafe") {
           targetNode.state = "Infected";
         }
       } else {
         // Handle failed infection based on model type
         if (prev.modelType === "SIR") {
-          // In SIR model, failed infection leads to immunity (recovered/removed)
-          if (targetNode.state !== "Immune" && 
+          if (targetNode.state !== "Immune" &&
               targetNode.state !== "VaccinatedSafe") {
             targetNode.state = "Immune";
           }
         } else {
-          // In SI model, failed infection can mark as failed attempt or leave susceptible
-          if (targetNode.state !== "Immune" && 
+          if (targetNode.state !== "Immune" &&
               targetNode.state !== "VaccinatedSafe") {
             targetNode.state = "InfectionAttemptFailed";
           }
         }
       }
+
+      updatedNodes[pendingInfection.to] = targetNode;
 
       // Update time series if state changed
       updateTimeSeriesIfChanged(updatedNodes, oldNodes);

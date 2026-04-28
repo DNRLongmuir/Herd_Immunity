@@ -183,9 +183,16 @@ export default function App() {
       };
       localStorage.setItem('herdImmunitySessions', JSON.stringify(updatedSessions));
       
-      // Increment game number and clear time series
+      // Increment game number and reinitialize time series with step 0
       setGameNumber(prev => prev + 1);
-      setTimeSeries([]);
+      const freshNodes = createInitialNodes(state.gridSize.rows, state.gridSize.cols);
+      setState(prev => ({
+        ...prev,
+        nodes: freshNodes,
+        history: [],
+      }));
+      const initialCounts = countNodeStates(freshNodes);
+      setTimeSeries([{ step: 0, counts: initialCounts }]);
       // Reset seeding state for new game
       setSeedAttemptsRemaining(3);
       setIsSeeded(false);
@@ -258,7 +265,7 @@ export default function App() {
       const newHistory = prev.history.slice(0, -1);
       const lastEvent = prev.history[prev.history.length - 1];
       const updatedNodes = { ...prev.nodes };
-      updatedNodes[lastEvent.to].state = "Susceptible";
+      updatedNodes[lastEvent.to] = { ...updatedNodes[lastEvent.to], state: "Susceptible" };
       return {
         ...prev,
         nodes: updatedNodes,
@@ -375,8 +382,8 @@ export default function App() {
       setState(prev => {
         const oldNodes = prev.nodes;
         const updatedNodes = { ...prev.nodes };
-        updatedNodes[chosenNodeId].state = "Infected";
-        
+        updatedNodes[chosenNodeId] = { ...updatedNodes[chosenNodeId], state: "Infected" };
+
         const newHistoryEntry = { from: null, to: chosenNodeId, success: true, timestamp: Date.now() };
         const newState = {
           ...prev,
