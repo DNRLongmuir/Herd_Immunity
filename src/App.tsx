@@ -77,6 +77,7 @@ export default function App() {
   const [showEndGameDialog, setShowEndGameDialog] = useState<boolean>(false);
   const [autoPlayRunning, setAutoPlayRunning] = useState<boolean>(false);
   const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [showChart, setShowChart] = useState<boolean>(false);
   
   // New state hooks for seeding system
   const [seedAttemptsRemaining, setSeedAttemptsRemaining] = useState<number>(3);
@@ -674,8 +675,26 @@ export default function App() {
           </div>
         </div>
 
-        {/* Time Series Chart */}
-        <TimeSeriesChart timeSeries={timeSeries} show={infectionMode} darkMode={darkMode} />
+        {/* Time Series Toggle + Chart */}
+        {timeSeries.length > 1 && (
+          <div className="mt-6">
+            <button
+              onClick={() => setShowChart(prev => !prev)}
+              className={`w-full py-3 rounded-lg font-semibold transition-colors duration-200 ${
+                showChart
+                  ? darkMode
+                    ? 'bg-teal-700 text-teal-100 hover:bg-teal-600'
+                    : 'bg-teal-600 text-white hover:bg-teal-500'
+                  : darkMode
+                  ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              {showChart ? 'Hide Epidemic Trajectory' : `Show Epidemic Trajectory (${timeSeries.length} steps)`}
+            </button>
+            <TimeSeriesChart timeSeries={timeSeries} show={showChart} darkMode={darkMode} />
+          </div>
+        )}
 
         {/* End Game Dialog */}
         {showEndGameDialog && (
