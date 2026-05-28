@@ -203,14 +203,11 @@ export default function App() {
       // Increment game number and reinitialize time series with step 0
       setGameNumber(prev => prev + 1);
       const freshNodes = createInitialNodes(state.gridSize.rows, state.gridSize.cols);
-      const freshOrder = createSequentialOrder(state.gridSize.rows * state.gridSize.cols);
       setState(prev => ({
         ...prev,
         nodes: freshNodes,
         history: [],
-        nodeOrder: freshOrder,
       }));
-      setIsRandomised(false);
       const initialCounts = countNodeStates(freshNodes);
       setTimeSeries([{ step: 0, counts: initialCounts }]);
       // Reset seeding state for new game
@@ -230,7 +227,8 @@ export default function App() {
 
     const freshNodes = createInitialNodes(rows, cols);
     const count = rows * cols;
-    const freshOrder = createSequentialOrder(count);
+    const seqOrder = createSequentialOrder(count);
+    const freshOrder = isRandomised ? shuffleOrder(seqOrder) : seqOrder;
     setState(prev => ({
       gridSize: { rows, cols },
       nodes: freshNodes,
@@ -238,7 +236,6 @@ export default function App() {
       modelType: prev.modelType,
       nodeOrder: freshOrder,
     }));
-    setIsRandomised(false);
     setPendingSource(null);
 
     // Initialize time series with step 0
@@ -258,15 +255,12 @@ export default function App() {
     if (hasData) {
       // Reset grid and increment game number
       const freshNodes = createInitialNodes(state.gridSize.rows, state.gridSize.cols);
-      const freshOrder = createSequentialOrder(state.gridSize.rows * state.gridSize.cols);
       setState(prev => ({
         ...prev,
         nodes: freshNodes,
         history: [],
         modelType: newModelType,
-        nodeOrder: freshOrder,
       }));
-      setIsRandomised(false);
       setPendingSource(null);
 
       // Initialize time series with step 0
@@ -624,15 +618,15 @@ export default function App() {
           </button>
           <button
             onClick={toggleRandomiseOrder}
-            disabled={isControlsDisabled}
+            disabled={isControlsDisabled || infectionMode}
             className={`px-3 py-2 rounded font-semibold transition-colors ${
-              isControlsDisabled
+              isControlsDisabled || infectionMode
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : isRandomised
                 ? 'bg-teal-500 text-white hover:bg-teal-600'
                 : 'bg-teal-600 text-white hover:bg-teal-700'
             }`}
-            title={isRandomised ? 'Reset to sequential order' : 'Randomise node numbers'}
+            title={infectionMode ? 'Cannot randomise during infection mode' : isRandomised ? 'Reset to sequential order' : 'Randomise node numbers'}
           >
             {isRandomised ? 'Reset Order' : 'Randomise Numbers'}
           </button>
