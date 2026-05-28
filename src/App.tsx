@@ -29,11 +29,24 @@ const createInitialNodes = (rows: number, cols: number) => {
   return nodes;
 };
 
+const createSequentialOrder = (count: number): number[] =>
+  Array.from({ length: count }, (_, i) => i + 1);
+
+const shuffleOrder = (order: number[]): number[] => {
+  const arr = [...order];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
 const initialGameState: GameState = {
   gridSize: { rows: 5, cols: 5 },
   nodes: createInitialNodes(5, 5),
   history: [],
-  modelType: "SIR", // Default to SIR model
+  modelType: "SIR",
+  nodeOrder: createSequentialOrder(25),
 };
 
 const formatDate = (date: Date): string => {
@@ -78,7 +91,8 @@ export default function App() {
   const [autoPlayRunning, setAutoPlayRunning] = useState<boolean>(false);
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [showChart, setShowChart] = useState<boolean>(false);
-  
+  const [isRandomised, setIsRandomised] = useState<boolean>(false);
+
   // New state hooks for seeding system
   const [seedAttemptsRemaining, setSeedAttemptsRemaining] = useState<number>(3);
   const [isSeeded, setIsSeeded] = useState<boolean>(false);
@@ -189,17 +203,20 @@ export default function App() {
       // Increment game number and reinitialize time series with step 0
       setGameNumber(prev => prev + 1);
       const freshNodes = createInitialNodes(state.gridSize.rows, state.gridSize.cols);
+      const freshOrder = createSequentialOrder(state.gridSize.rows * state.gridSize.cols);
       setState(prev => ({
         ...prev,
         nodes: freshNodes,
         history: [],
+        nodeOrder: freshOrder,
       }));
+      setIsRandomised(false);
       const initialCounts = countNodeStates(freshNodes);
       setTimeSeries([{ step: 0, counts: initialCounts }]);
       // Reset seeding state for new game
       setSeedAttemptsRemaining(3);
       setIsSeeded(false);
-    seedingRef.current = false;
+      seedingRef.current = false;
     }
     setShowEndGameDialog(false);
   }
@@ -212,12 +229,16 @@ export default function App() {
     setAutoPlayRunning(false);
 
     const freshNodes = createInitialNodes(rows, cols);
+    const count = rows * cols;
+    const freshOrder = createSequentialOrder(count);
     setState(prev => ({
       gridSize: { rows, cols },
       nodes: freshNodes,
       history: [],
-      modelType: prev.modelType, // Preserve model type
+      modelType: prev.modelType,
+      nodeOrder: freshOrder,
     }));
+    setIsRandomised(false);
     setPendingSource(null);
 
     // Initialize time series with step 0
@@ -237,12 +258,15 @@ export default function App() {
     if (hasData) {
       // Reset grid and increment game number
       const freshNodes = createInitialNodes(state.gridSize.rows, state.gridSize.cols);
+      const freshOrder = createSequentialOrder(state.gridSize.rows * state.gridSize.cols);
       setState(prev => ({
         ...prev,
         nodes: freshNodes,
         history: [],
         modelType: newModelType,
+        nodeOrder: freshOrder,
       }));
+      setIsRandomised(false);
       setPendingSource(null);
 
       // Initialize time series with step 0
@@ -253,7 +277,7 @@ export default function App() {
       // Reset seeding state for new game
       setSeedAttemptsRemaining(3);
       setIsSeeded(false);
-    seedingRef.current = false;
+      seedingRef.current = false;
 
       console.log(`Model type changed from ${state.modelType} to ${newModelType}, grid reset, game number incremented to ${gameNumber + 1}`);
     } else {
@@ -406,6 +430,17 @@ export default function App() {
       // Mark as seeded and disable further seeding
       setIsSeeded(true);
       setPendingSource(null);
+    }
+  }
+
+  function toggleRandomiseOrder() {
+    if (isRandomised) {
+      const count = state.gridSize.rows * state.gridSize.cols;
+      setState(prev => ({ ...prev, nodeOrder: createSequentialOrder(count) }));
+      setIsRandomised(false);
+    } else {
+      setState(prev => ({ ...prev, nodeOrder: shuffleOrder(prev.nodeOrder) }));
+      setIsRandomised(true);
     }
   }
 
@@ -577,7 +612,7 @@ export default function App() {
           >
             Seed Infection {!isSeeded && `(${seedAttemptsRemaining}/3)`}
           </button>
-          <button 
+          <button
             onClick={handleAutoPlay}
             className={`px-3 py-2 rounded font-semibold transition-colors ${
               autoPlayRunning
@@ -586,6 +621,20 @@ export default function App() {
             }`}
           >
             {autoPlayRunning ? 'Stop Auto-Play' : 'Auto-Play'}
+          </button>
+          <button
+            onClick={toggleRandomiseOrder}
+            disabled={isControlsDisabled}
+            className={`px-3 py-2 rounded font-semibold transition-colors ${
+              isControlsDisabled
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : isRandomised
+                ? 'bg-teal-500 text-white hover:bg-teal-600'
+                : 'bg-teal-600 text-white hover:bg-teal-700'
+            }`}
+            title={isRandomised ? 'Reset to sequential order' : 'Randomise node numbers'}
+          >
+            {isRandomised ? 'Reset Order' : 'Randomise Numbers'}
           </button>
         </div>
 

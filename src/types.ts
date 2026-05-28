@@ -31,7 +31,9 @@ export interface GameState {
     timestamp: number;
     previousState: NodeState;  // state of 'to' node before this event
   }>;
-  modelType: ModelType;        // New field for model type
+  modelType: ModelType;
+  // nodeOrder[i] = the display number shown at grid position i (row-major order)
+  nodeOrder: number[];
 }
 
 // Props for StatePalette component
