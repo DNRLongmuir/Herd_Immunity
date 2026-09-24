@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface ConfirmationDialogProps {
   message: string;
   onConfirm: () => void;
@@ -23,13 +21,13 @@ export default function ConfirmationDialog({ message, onConfirm, onCancel, darkM
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            Cancel
+            No
           </button>
           <button
             onClick={onConfirm}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
           >
-            Confirm
+            Yes
           </button>
         </div>
       </div>

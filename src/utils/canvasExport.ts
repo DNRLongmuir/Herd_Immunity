@@ -78,7 +78,7 @@ const drawInfectionArrows = (
   gap: number,
   padding: number
 ): void => {
-  const { gridSize, history } = state;
+  const { history } = state;
   
   ctx.lineWidth = 2;
   

@@ -6,8 +6,7 @@ const StatePalette: React.FC<StatePaletteProps> = ({
   selectedState, 
   setSelectedState, 
   disabled = false, 
-  modelType,
-  darkMode = false
+  modelType
 }) => {
   // Define states based on model type
   const getStatesForModel = (): NodeState[] => {
@@ -46,7 +45,7 @@ const StatePalette: React.FC<StatePaletteProps> = ({
       case "Infected": return "I";
       case "Immune": return "R";
       case "InfectionAttemptFailed": return "X";
-      default: return state.charAt(0);
+      default: return '';
     }
   };
 

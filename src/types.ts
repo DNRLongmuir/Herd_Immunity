@@ -80,7 +80,7 @@ export interface GridProps {
   pendingSource: string | null;
   setPendingSource: (id: string | null) => void;
   disabled?: boolean;
-  updateTimeSeriesIfChanged: (newNodes: Record<string, GridNode>, oldNodes: Record<string, GridNode>) => void;
+  updateTimeSeriesIfChanged: (newNodes: Record<string, GridNode>, oldNodes: Record<string, GridNode>, replaceBaseline?: boolean) => void;
   darkMode?: boolean;
 }
 

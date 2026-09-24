@@ -1,4 +1,4 @@
-import { GameState, GridNode, NodeState } from '../types';
+import { GameState, GridNode } from '../types';
 
 export interface AutoPlayStep {
   fromNodeId: string;
@@ -37,23 +37,6 @@ export class AutoPlaySimulator {
     return neighbors;
   }
 
-  private countNodeStates(nodes: Record<string, GridNode>): Record<NodeState, number> {
-    const counts: Record<NodeState, number> = {
-      Susceptible: 0,
-      VaccinatedSafe: 0,
-      VaccinatedFailed: 0,
-      Infected: 0,
-      Immune: 0,
-      InfectionAttemptFailed: 0,
-    };
-    
-    Object.values(nodes).forEach(node => {
-      counts[node.state]++;
-    });
-    
-    return counts;
-  }
-
   private getCurrentState(): Promise<GameState> {
     return new Promise(resolve => {
       this.setState(current => {
@@ -90,49 +73,30 @@ export class AutoPlaySimulator {
       if (!this.isRunning) return;
 
       const success = Math.random() < 0.5;
+      const attemptState = await this.getCurrentState();
+      if (attemptState.nodes[neighborId]?.state !== "Susceptible") continue;
 
-      this.setState(prevState => {
-        const updatedNodes = { ...prevState.nodes };
-        let targetNode = { ...updatedNodes[neighborId] };
-        let stateChanged = false;
+      const updatedNodes = { ...attemptState.nodes };
+      const targetNode = { ...updatedNodes[neighborId] };
+      targetNode.state = success
+        ? "Infected"
+        : attemptState.modelType === "SIR"
+          ? "Immune"
+          : "InfectionAttemptFailed";
+      updatedNodes[neighborId] = targetNode;
 
-        if (prevState.modelType === "SIR") {
-          if (success) {
-            targetNode.state = "Infected";
-            stateChanged = true;
-            this.queue.push(neighborId);
-          } else {
-            targetNode.state = "Immune";
-            stateChanged = true;
-          }
-        } else {
-          if (success) {
-            targetNode.state = "Infected";
-            stateChanged = true;
-            this.queue.push(neighborId);
-          } else {
-            targetNode.state = "InfectionAttemptFailed";
-            stateChanged = true;
-          }
-        }
-
-        updatedNodes[neighborId] = targetNode;
-
-        if (stateChanged) {
-          this.updateTimeSeriesCallback(updatedNodes, prevState.nodes);
-        }
-
-        return {
-          ...prevState,
-          nodes: updatedNodes,
-          history: [...prevState.history, {
-            from: currentNodeId,
-            to: neighborId,
-            success,
-            timestamp: Date.now(),
-            previousState: prevState.nodes[neighborId].state,
-          }],
-        };
+      if (success) this.queue.push(neighborId);
+      this.updateTimeSeriesCallback(updatedNodes, attemptState.nodes);
+      this.setState({
+        ...attemptState,
+        nodes: updatedNodes,
+        history: [...attemptState.history, {
+          from: currentNodeId,
+          to: neighborId,
+          success,
+          timestamp: Date.now(),
+          previousState: attemptState.nodes[neighborId].state,
+        }],
       });
     }
   }
@@ -168,30 +132,22 @@ export class AutoPlaySimulator {
     
     const randomNode = susceptibleNodes[Math.floor(Math.random() * susceptibleNodes.length)];
     
-    this.setState(prevState => {
-      const oldNodes = prevState.nodes;
-      const updatedNodes = { ...prevState.nodes };
-      updatedNodes[randomNode.id] = { ...updatedNodes[randomNode.id], state: "Infected" };
-      
-      const newHistoryEntry = {
-        from: null,
-        to: randomNode.id,
-        success: true,
-        timestamp: Date.now(),
-        previousState: oldNodes[randomNode.id].state,
-      };
+    const updatedNodes = { ...gameState.nodes };
+    updatedNodes[randomNode.id] = { ...updatedNodes[randomNode.id], state: "Infected" };
+    const newHistoryEntry = {
+      from: null,
+      to: randomNode.id,
+      success: true,
+      timestamp: Date.now(),
+      previousState: gameState.nodes[randomNode.id].state,
+    };
 
-      const newState = {
-        ...prevState,
-        nodes: updatedNodes,
-        history: [...prevState.history, newHistoryEntry]
-      };
-
-      // Update time series if state changed
-      this.updateTimeSeriesCallback(updatedNodes, oldNodes);
-
-      return newState;
+    this.setState({
+      ...gameState,
+      nodes: updatedNodes,
+      history: [...gameState.history, newHistoryEntry]
     });
+    this.updateTimeSeriesCallback(updatedNodes, gameState.nodes);
 
     return randomNode.id;
   }

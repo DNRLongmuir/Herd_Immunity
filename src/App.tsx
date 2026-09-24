@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { toPng } from 'html-to-image';
 import { GameState, GridNode, NodeState, SessionData, ModelType } from './types';
 import { AutoPlaySimulator } from './utils/autoPlaySimulator';
-import { exportGridToCanvas } from './utils/canvasExport';
+import { isSeedCandidate } from './utils/gameRules';
 import Grid from './Grid';
 import InfectionArrows from './InfectionArrows';
 import StatePalette from './StatePalette';
@@ -43,7 +43,14 @@ const formatDate = (date: Date): string => {
 
 const getStoredSessions = (): Record<string, SessionData> => {
   const stored = localStorage.getItem('herdImmunitySessions');
-  return stored ? JSON.parse(stored) : {};
+  if (!stored) return {};
+
+  try {
+    return JSON.parse(stored) as Record<string, SessionData>;
+  } catch {
+    console.warn('Ignoring invalid saved Herd Immunity session data.');
+    return {};
+  }
 };
 
 const countNodeStates = (nodes: Record<string, GridNode>): Record<NodeState, number> => {
@@ -98,7 +105,7 @@ export default function App() {
   }, [infectionMode]);
 
   // Centralized function to update time series when state changes
-  const updateTimeSeriesIfChanged = (newNodes: Record<string, GridNode>, oldNodes: Record<string, GridNode>) => {
+  const updateTimeSeriesIfChanged = (newNodes: Record<string, GridNode>, oldNodes: Record<string, GridNode>, replaceBaseline = false) => {
     // Check if any node actually changed state
     const hasStateChange = Object.keys(newNodes).some(nodeId =>
       newNodes[nodeId].state !== oldNodes[nodeId].state
@@ -106,10 +113,10 @@ export default function App() {
 
     if (hasStateChange) {
       const currentCounts = countNodeStates(newNodes);
-      setTimeSeries(prev => [...prev, {
-        step: prev.length,
-        counts: currentCounts
-      }]);
+      setTimeSeries(prev => replaceBaseline
+        ? [{ step: 0, counts: currentCounts }]
+        : [...prev, { step: prev.length, counts: currentCounts }]
+      );
     }
   };
   // Initialize auto-play simulator
@@ -134,22 +141,30 @@ export default function App() {
   useEffect(() => {
     // Check if infection mode was just turned OFF (transition from true to false)
     if (!infectionMode && prevInfectionModeRef.current) {
-      setShowEndGameDialog(timeSeries.length > 1); // More than just step 0
+      setShowEndGameDialog(state.history.length > 0);
     }
 
     // Update the previous value
     prevInfectionModeRef.current = infectionMode;
-  }, [infectionMode, timeSeries.length]);
+  }, [infectionMode, state.history.length]);
 
 
   function handleSessionSubmit(name: string) {
+    const freshNodes = createInitialNodes(state.gridSize.rows, state.gridSize.cols);
     setSessionName(name);
     setSessionDate(formatDate(new Date()));
     setGameNumber(1);
 
     // Initialize time series with step 0
-    const initialCounts = countNodeStates(state.nodes);
+    const initialCounts = countNodeStates(freshNodes);
     setTimeSeries([{ step: 0, counts: initialCounts }]);
+
+    setState(prev => ({ ...prev, nodes: freshNodes, history: [] }));
+    setSelectedState(null);
+    setInfectionMode(false);
+    setVaccinationMode(false);
+    setVaccinationLabel(null);
+    setPendingSource(null);
 
     // Reset seeding state
     setSeedAttemptsRemaining(3);
@@ -297,6 +312,9 @@ export default function App() {
   }
 
   function undoLastEvent() {
+    const lastEvent = state.history[state.history.length - 1];
+    if (!lastEvent) return;
+
     setState(prev => {
       if (prev.history.length === 0) return prev;
       const newHistory = prev.history.slice(0, -1);
@@ -311,6 +329,9 @@ export default function App() {
     });
     setPendingSource(null);
     setTimeSeries(prev => prev.length > 1 ? prev.slice(0, -1) : prev);
+    if (lastEvent.from === null) {
+      setIsSeeded(false);
+    }
   }
 
   function downloadJSON() {
@@ -362,7 +383,17 @@ export default function App() {
     if (seedingRef.current) return;
     seedingRef.current = true;
 
-    const nodeIds = Object.keys(state.nodes);
+    const nodeIds = Object.keys(state.nodes).filter(nodeId => {
+      const nodeState = state.nodes[nodeId].state;
+      return isSeedCandidate(nodeState);
+    });
+
+    if (nodeIds.length === 0) {
+      setSeedDialogMessage("There are no susceptible or protected vaccinated students available to seed.");
+      setShowSeedDialog(true);
+      seedingRef.current = false;
+      return;
+    }
     const weights: number[] = [];
     
     nodeIds.forEach(nodeId => {
@@ -416,23 +447,17 @@ export default function App() {
       return;
     } else {
       // Successful seeding - infect the chosen node
-      setState(prev => {
-        const oldNodes = prev.nodes;
-        const updatedNodes = { ...prev.nodes };
-        updatedNodes[chosenNodeId] = { ...updatedNodes[chosenNodeId], state: "Infected" };
+      const oldNodes = state.nodes;
+      const updatedNodes = { ...oldNodes };
+      updatedNodes[chosenNodeId] = { ...updatedNodes[chosenNodeId], state: "Infected" };
+      const newHistoryEntry = { from: null, to: chosenNodeId, success: true, timestamp: Date.now(), previousState: oldNodes[chosenNodeId].state };
 
-        const newHistoryEntry = { from: null, to: chosenNodeId, success: true, timestamp: Date.now(), previousState: oldNodes[chosenNodeId].state };
-        const newState = {
-          ...prev,
-          nodes: updatedNodes,
-          history: [...prev.history, newHistoryEntry],
-        };
-
-        // Update time series if state changed
-        updateTimeSeriesIfChanged(updatedNodes, oldNodes);
-
-        return newState;
-      });
+      setState(prev => ({
+        ...prev,
+        nodes: updatedNodes,
+        history: [...prev.history, newHistoryEntry],
+      }));
+      updateTimeSeriesIfChanged(updatedNodes, oldNodes);
       
       // Mark as seeded and disable further seeding
       setIsSeeded(true);
@@ -644,7 +669,7 @@ export default function App() {
           <StatePalette
             selectedState={selectedState}
             setSelectedState={setSelectedState}
-            disabled={isControlsDisabled}
+            disabled={isControlsDisabled || state.history.length > 0}
             modelType={state.modelType}
             darkMode={darkMode}
           />

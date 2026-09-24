@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { GridProps, NodeState, GameState } from './types';
+import { GridProps, GameState } from './types';
 import { getColorForState } from './utils/colorMapping';
+import { isManualTargetEligible, resolveManualExposure } from './utils/gameRules';
 import ConfirmationDialog from './ConfirmationDialog';
 
 const Grid: React.FC<GridProps> = ({
@@ -32,6 +33,11 @@ const Grid: React.FC<GridProps> = ({
           setPendingSource(nodeId);
         }
       } else {
+        if (nodeId === pendingSource) {
+          setPendingSource(null);
+          return;
+        }
+
         // Check if target is VaccinatedSafe - always block unless vaccination mode is on
         if (node.state === "VaccinatedSafe" && !vaccinationMode) {
           setShowVaccinatedWarning(true);
@@ -39,8 +45,7 @@ const Grid: React.FC<GridProps> = ({
           return;
         }
         
-        // In SIR mode, silently ignore Immune (Recovered) targets
-        if (state.modelType === "SIR" && node.state === "Immune") {
+        if (!isManualTargetEligible(node.state, vaccinationMode)) {
           setPendingSource(null); // Clear pending source
           return;
         }
@@ -49,55 +54,33 @@ const Grid: React.FC<GridProps> = ({
         setPendingInfection({ from: pendingSource, to: nodeId });
         setShowConfirmation(true);
       }
-    } else if (selectedState !== null) {
-      setState(prev => {
-        const oldNodes = prev.nodes;
-        const updatedNodes = { ...prev.nodes };
-        updatedNodes[nodeId] = { ...updatedNodes[nodeId], state: selectedState };
-
-        // Update time series if state changed
-        updateTimeSeriesIfChanged(updatedNodes, oldNodes);
-
-        return { ...prev, nodes: updatedNodes };
-      });
+    } else if (selectedState !== null && state.history.length === 0) {
+      const oldNodes = state.nodes;
+      const updatedNodes = { ...oldNodes };
+      updatedNodes[nodeId] = { ...updatedNodes[nodeId], state: selectedState };
+      setState(prev => ({ ...prev, nodes: updatedNodes }));
+      updateTimeSeriesIfChanged(updatedNodes, oldNodes, true);
     }
   };
 
   const handleInfectionConfirm = (success: boolean) => {
     if (!pendingInfection) return;
 
+    const oldNodes = state.nodes;
+    const updatedNodes = { ...oldNodes };
+    const targetNode = { ...updatedNodes[pendingInfection.to] };
+
+    targetNode.state = resolveManualExposure(
+      targetNode.state,
+      success,
+      state.modelType,
+      vaccinationMode
+    );
+
+    updatedNodes[pendingInfection.to] = targetNode;
+    updateTimeSeriesIfChanged(updatedNodes, oldNodes);
+
     setState(prev => {
-      const oldNodes = prev.nodes;
-      const updatedNodes = { ...prev.nodes };
-      let targetNode = { ...updatedNodes[pendingInfection.to] };
-
-      if (success) {
-        if (vaccinationMode && targetNode.state === "VaccinatedSafe") {
-          targetNode.state = "VaccinatedFailed";
-        } else if (targetNode.state !== "Immune" &&
-                  targetNode.state !== "VaccinatedSafe") {
-          targetNode.state = "Infected";
-        }
-      } else {
-        // Handle failed infection based on model type
-        if (prev.modelType === "SIR") {
-          if (targetNode.state !== "Immune" &&
-              targetNode.state !== "VaccinatedSafe") {
-            targetNode.state = "Immune";
-          }
-        } else {
-          if (targetNode.state !== "Immune" &&
-              targetNode.state !== "VaccinatedSafe") {
-            targetNode.state = "InfectionAttemptFailed";
-          }
-        }
-      }
-
-      updatedNodes[pendingInfection.to] = targetNode;
-
-      // Update time series if state changed
-      updateTimeSeriesIfChanged(updatedNodes, oldNodes);
-      
       const newState: GameState = {
         ...prev,
         nodes: updatedNodes,
@@ -109,7 +92,6 @@ const Grid: React.FC<GridProps> = ({
           previousState: oldNodes[pendingInfection.to].state,
         }]
       };
-
       return newState;
     });
 
