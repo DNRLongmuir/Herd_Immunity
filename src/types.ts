@@ -15,6 +15,7 @@ export interface GridNode {
   id: string;                  // e.g. "r2c3", uniquely identifies a cell
   row: number;                 // 0-based row index
   col: number;                 // 0-based column index
+  studentNumber: number;       // stable student identity displayed in the cell
   state: NodeState;
   lastInfectSource?: string;   // id of the node that infected this one
   lastInfectSuccess?: boolean;

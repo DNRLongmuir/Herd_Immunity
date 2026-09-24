@@ -26,17 +26,6 @@ export const exportGridToCanvas = (state: GameState, gameNumber: number, darkMod
   ctx.fillStyle = darkMode ? '#374151' : '#ffffff';
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
   
-  // Helper function to get grid number
-  const getGridNumber = (nodeId: string): number => {
-    const [, rowStr, colStr] = nodeId.match(/r(\d+)c(\d+)/) || [];
-    if (!rowStr || !colStr) return 0;
-    
-    const row = parseInt(rowStr, 10);
-    const col = parseInt(colStr, 10);
-    
-    return row * gridSize.cols + col + 1;
-  };
-  
   // Draw each cell
   Object.values(nodes).forEach((node: GridNode) => {
     const x = padding + node.col * (cellSize + gap);
@@ -54,9 +43,8 @@ export const exportGridToCanvas = (state: GameState, gameNumber: number, darkMod
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    const gridNumber = getGridNumber(node.id);
     ctx.fillText(
-      gridNumber.toString(),
+      node.studentNumber.toString(),
       x + cellSize / 2,
       y + cellSize / 2
     );

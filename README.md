@@ -56,6 +56,11 @@ The deployment can also be started manually from **Actions → Deploy Herd Immun
 - **Reset to 5×5**: Creates a 5×5 grid (25 individuals) - default
 - **Reset to 6×6**: Creates a 6×6 grid (36 individuals)
 
+#### Shuffle Students
+- **Shuffle Students**: Randomly moves student numbers to new grid positions during setup
+- Each student's epidemiological state moves with their number
+- Shuffling is locked once infection history exists so transmission records remain spatially correct
+
 #### State Palette (Colored Buttons)
 Click these buttons to select a state, then click grid cells to change their state:
 - **S (Gray)**: Set cells to Susceptible

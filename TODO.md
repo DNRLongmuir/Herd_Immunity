@@ -34,11 +34,11 @@ This list records the agreed classroom rules and the work needed to bring the ap
 
 ## 3. Restore student-number randomisation correctly
 
-- [ ] Restore a shuffle/randomise-numbers action.
-- [ ] Preserve each student's state when their number moves to a new position.
+- [x] Restore a shuffle/randomise-numbers action.
+- [x] Preserve each student's state when their number moves to a new position.
 - [ ] Preserve any state needed for SI transmission permission when shuffling.
 - [ ] Ensure infection history continues to identify the correct students after a shuffle.
-- [ ] Decide whether shuffling is allowed during an active round or only between rounds; default to between rounds.
+- [x] Restrict shuffling to setup/between-round use before infection history exists.
 - [ ] Make the current arrangement clear enough for students to locate their new positions quickly.
 
 ## 4. Represent rounds and the token economy

@@ -119,17 +119,6 @@ const Grid: React.FC<GridProps> = ({
     setShowConfirmation(false);
   };
 
-  const getGridNumber = (nodeId: string): number => {
-    const [, rowStr, colStr] = nodeId.match(/r(\d+)c(\d+)/) || [];
-    if (!rowStr || !colStr) return 0;
-    
-    const row = parseInt(rowStr, 10);
-    const col = parseInt(colStr, 10);
-    
-    // Convert row/col to grid number (1-based, left-to-right, top-to-bottom)
-    return row * state.gridSize.cols + col + 1;
-  };
-
   return (
     <>
       <div
@@ -167,9 +156,9 @@ const Grid: React.FC<GridProps> = ({
               opacity: disabled ? 0.7 : 1,
               color: "#000000", // Ensure numbers are always visible
             }}
-            title={disabled ? 'Disabled during Auto-Play' : `Position ${getGridNumber(node.id)} - ${node.state}`}
+            title={disabled ? 'Disabled during Auto-Play' : `Student ${node.studentNumber} - ${node.state}`}
           >
-            {getGridNumber(node.id)}
+            {node.studentNumber}
           </div>
         ))}
       </div>

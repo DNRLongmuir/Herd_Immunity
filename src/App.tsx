@@ -22,6 +22,7 @@ const createInitialNodes = (rows: number, cols: number) => {
         id,
         row: r,
         col: c,
+        studentNumber: r * cols + c + 1,
         state: "Susceptible",
       };
     }
@@ -230,6 +231,36 @@ export default function App() {
     seedingRef.current = false;
   }
 
+  function shuffleStudents() {
+    if (autoPlayRunning || infectionMode || state.history.length > 0) return;
+
+    setState(prev => {
+      const positions = Object.values(prev.nodes);
+      const students = positions.map(node => ({
+        studentNumber: node.studentNumber,
+        state: node.state,
+        lastInfectSource: node.lastInfectSource,
+        lastInfectSuccess: node.lastInfectSuccess,
+      }));
+
+      for (let i = students.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [students[i], students[j]] = [students[j], students[i]];
+      }
+
+      const shuffledNodes: Record<string, GridNode> = {};
+      positions.forEach((position, index) => {
+        shuffledNodes[position.id] = {
+          ...position,
+          ...students[index],
+        };
+      });
+
+      return { ...prev, nodes: shuffledNodes };
+    });
+    setPendingSource(null);
+  }
+
   function handleModelTypeChange(newModelType: ModelType) {
     // Check if grid is not fresh (has history or time series data)
     const hasData = state.history.length > 0 || timeSeries.length > 1; // More than just step 0
@@ -428,6 +459,7 @@ export default function App() {
   const isControlsDisabled = autoPlayRunning;
   const isModelTypeDisabled = infectionMode || autoPlayRunning;
   const isSeedButtonDisabled = isControlsDisabled || isSeeded || seedAttemptsRemaining === 0;
+  const isShuffleDisabled = isControlsDisabled || infectionMode || state.history.length > 0;
 
   if (showSessionDialog) {
     return <SessionDialog onSubmit={handleSessionSubmit} darkMode={darkMode} />;
@@ -525,6 +557,24 @@ export default function App() {
             }`}
           >
             Reset to 6×6
+          </button>
+          <button
+            onClick={shuffleStudents}
+            disabled={isShuffleDisabled}
+            className={`px-3 py-2 rounded transition-colors ${
+              isShuffleDisabled
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-teal-600 text-white hover:bg-teal-700'
+            }`}
+            title={
+              state.history.length > 0
+                ? 'Reset the grid before shuffling students after infection has begun'
+                : infectionMode
+                ? 'Exit Infection Mode before shuffling students'
+                : 'Move student numbers and their current states to new positions'
+            }
+          >
+            Shuffle Students
           </button>
           <button 
             onClick={undoLastEvent} 
