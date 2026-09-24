@@ -2,6 +2,27 @@
 
 An interactive visualization tool for understanding how diseases spread through populations and how vaccination affects transmission dynamics.
 
+## Launching the app
+
+### Locally on Windows
+
+Double-click `launch-local.cmd`. On the first launch it installs the locked npm dependencies, starts the local development server and opens the app in your default browser. Keep the command window open while using the app; press `Ctrl+C` in that window to stop it.
+
+You can also launch it from a terminal:
+
+```powershell
+npm ci
+npm run dev:open
+```
+
+### Remotely with GitHub Pages
+
+The repository includes a GitHub Actions workflow that builds and deploys the app whenever `main` is pushed. In the GitHub repository, open **Settings → Pages** and set **Build and deployment → Source** to **GitHub Actions** once. After the workflow succeeds, the app is available at:
+
+<https://dnrlongmuir.github.io/Herd_Immunity/>
+
+The deployment can also be started manually from **Actions → Deploy Herd Immunity to GitHub Pages → Run workflow**.
+
 ![Simulator Screenshot](https://images.pexels.com/photos/4386466/pexels-photo-4386466.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2)
 
 ## Features

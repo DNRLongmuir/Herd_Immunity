@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:open": "vite --open",
     "build": "vite build",
+    "build:pages": "vite build --mode github-pages",
     "lint": "eslint .",
     "preview": "vite preview"
   },
